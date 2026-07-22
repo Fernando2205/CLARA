@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CLARA - Historial y Perfil</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#dcd9d9",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#564500",
+                    "secondary": "#0061a7",
+                    "on-secondary-fixed-variant": "#00497f",
+                    "on-primary-fixed": "#231b00",
+                    "surface-variant": "#e4e2e1",
+                    "surface-container": "#f0eded",
+                    "secondary-fixed": "#d2e4ff",
+                    "on-tertiary-container": "#2b6278",
+                    "on-tertiary-fixed": "#001f2a",
+                    "on-surface-variant": "#52514E",
+                    "inverse-primary": "#eec200",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1b1c1c",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#725c00",
+                    "outline": "#898781",
+                    "secondary-container": "#69affe",
+                    "on-secondary-container": "#004173",
+                    "on-tertiary-fixed-variant": "#0d4d62",
+                    "surface-container-low": "#f6f3f2",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#eec200",
+                    "surface-container-high": "#eae8e7",
+                    "on-primary-container": "#333333",
+                    "inverse-on-surface": "#f3f0f0",
+                    "tertiary-container": "#a8ddf6",
+                    "primary-container": "#ffd000",
+                    "primary": "#0067B1",
+                    "tertiary-fixed-dim": "#99cee7",
+                    "inverse-surface": "#303030",
+                    "surface-container-highest": "#e4e2e1",
+                    "secondary-fixed-dim": "#a0c9ff",
+                    "tertiary-fixed": "#bce9ff",
+                    "on-secondary-fixed": "#001c37",
+                    "error-container": "#ffdad6",
+                    "background": "#fbf9f8",
+                    "outline-variant": "#CFD8E3",
+                    "surface": "#fbf9f8",
+                    "primary-fixed": "#ffe082",
+                    "tertiary": "#2e657a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#fbf9f8",
+                    "on-surface": "#1b1c1c",
+                    "brand-green": "#2E8540"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "16px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-screen": "32px",
+                    "touch-target-min": "48px",
+                    "panel-action-width": "60%",
+                    "gutter": "24px",
+                    "card-padding": "20px",
+                    "panel-info-width": "40%"
+            },
+            "fontFamily": {
+                    "body-md": ["Poppins"],
+                    "display-numeric": ["Poppins"],
+                    "label-sm": ["Poppins"],
+                    "headline-md": ["Poppins"],
+                    "button-text": ["Poppins"],
+                    "headline-lg": ["Poppins"]
+            },
+            "fontSize": {
+                    "body-md": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+                    "display-numeric": ["28px", {"lineHeight": "34px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-sm": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "button-text": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Poppins', sans-serif; background-color: #F4FAFD; }
+        .whisper-shadow { box-shadow: 0px 4px 20px rgba(0, 103, 177, 0.05); }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .voice-bar {
+            height: 4px;
+            background: #FFD000;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-secondary dark:bg-secondary-fixed-dim text-on-secondary dark:text-on-secondary-fixed docked full-width top-0 border-b border-outline-variant flex justify-between items-center w-full px-margin-screen h-touch-target-min z-50">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary-container flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">change_history</span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-primary dark:text-on-primary-fixed">CLARA</span>
+</div>
+</div>
+<div class="flex items-center gap-gutter">
+
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 hover:bg-on-secondary/10 rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined p-2 hover:bg-on-secondary/10 rounded-full transition-colors">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-on-secondary/20">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female culinary professional named Sofía Valencia. She is wearing a clean white chef's coat, smiling warmly at the camera. The background is a soft-focus professional kitchen with stainless steel surfaces and blue ambient lighting. High-key lighting makes her look friendly and systematic, consistent with the corporate geometric UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARaiHvdahDCqcBSEmwW0aywBd8ztfwVbjnZ_oGKuCgMPi9cCqzSqRKGQYWn9vBbTXKK4YaqiSqExx6B2vdVezMd3NVGLUabvoJiLwKziMisizj3BF1U3rAVkqy43ytCxAai4aYQSXgtQqMjMusYzeshPs2DBoqovilzhecVccu3fhetX-MXd2dUe7kMYoGei78qXUKMbNvaa-Sba5dPJWotX6eN27lkLeeVWAsSIT0DnjgVqt9OXH5"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex h-[calc(100vh-48px)] w-full">
+<!-- Left Panel: Historial (60%) -->
+<section class="w-panel-action-width h-full overflow-y-auto p-margin-screen relative bg-[#F4FAFD]">
+<div class="max-w-[700px] mx-auto">
+<div class="flex justify-between items-end mb-gutter">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-background mb-1">Historial de tomas</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Revisa y descarga los reportes de inventario finalizados.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 h-10 border border-outline-variant rounded-lg bg-surface-container-lowest font-label-sm text-label-sm text-on-surface-variant hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                            Filtrar
+                        </button>
+</div>
+</div>
+<!-- History List -->
+<div class="space-y-4">
+<!-- Log Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-card-padding whisper-shadow flex items-center justify-between group hover:border-secondary transition-colors cursor-pointer">
+<div class="flex gap-gutter items-center">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">22 jul 2026 · 14:31</span>
+<span class="inline-flex items-center gap-1 bg-brand-green/10 text-brand-green px-2 py-0.5 rounded-full font-label-sm text-[11px] font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        firmada
+                                    </span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-background mb-1">Restaurante Fuentes — AyB</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">47 refs · 12 min · 3 correcciones</p>
+</div>
+</div>
+<button class="text-secondary font-button-text text-button-text hover:underline px-4 h-11 rounded-lg">Re-generar reporte</button>
+</div>
+<!-- Log Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-card-padding whisper-shadow flex items-center justify-between group hover:border-secondary transition-colors cursor-pointer">
+<div class="flex gap-gutter items-center">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">21 jul 2026 · 09:15</span>
+<span class="inline-flex items-center gap-1 bg-brand-green/10 text-brand-green px-2 py-0.5 rounded-full font-label-sm text-[11px] font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        firmada
+                                    </span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-background mb-1">Almacén — Alimentos y Bebidas</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">112 refs · 28 min · 0 correcciones</p>
+</div>
+</div>
+<button class="text-secondary font-button-text text-button-text hover:underline px-4 h-11 rounded-lg">Re-generar reporte</button>
+</div>
+<!-- Log Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-card-padding whisper-shadow flex items-center justify-between group hover:border-secondary transition-colors cursor-pointer">
+<div class="flex gap-gutter items-center">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">20 jul 2026 · 17:02</span>
+<span class="inline-flex items-center gap-1 bg-brand-green/10 text-brand-green px-2 py-0.5 rounded-full font-label-sm text-[11px] font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        firmada
+                                    </span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-background mb-1">Kiosco Taquilla — AyB</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">85 refs · 19 min · 1 corrección</p>
+</div>
+</div>
+<button class="text-secondary font-button-text text-button-text hover:underline px-4 h-11 rounded-lg">Re-generar reporte</button>
+</div>
+<!-- Log Card 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-card-padding whisper-shadow flex items-center justify-between group hover:border-secondary transition-colors cursor-pointer">
+<div class="flex gap-gutter items-center">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">19 jul 2026 · 06:45</span>
+<span class="inline-flex items-center gap-1 bg-brand-green/10 text-brand-green px-2 py-0.5 rounded-full font-label-sm text-[11px] font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        firmada
+                                    </span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-background mb-1">Zoológico — Alimentos</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">32 refs · 8 min · 5 correcciones</p>
+</div>
+</div>
+<button class="text-secondary font-button-text text-button-text hover:underline px-4 h-11 rounded-lg">Re-generar reporte</button>
+</div>
+</div>
+</div>
+<!-- Voice Listener Indicator -->
+<div class="voice-bar"></div>
+</section>
+<!-- Right Panel: Profile (40%) -->
+<aside class="w-panel-info-width h-full bg-surface-container-lowest border-l border-outline-variant flex flex-col">
+<!-- Header Section -->
+<div class="bg-secondary p-margin-screen text-on-secondary flex flex-col items-center text-center">
+<div class="relative mb-6">
+<div class="w-32 h-32 rounded-full border-4 border-on-secondary/20 overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A close-up professional portrait of Sofía Valencia, a female chef with her hair neatly tied back, wearing a minimalist white kitchen uniform. She has a warm, confident expression. The lighting is crisp and modern, with a vibrant blue background that matches the primary UI color #0061a7. The image is clean and highly professional, reflecting a systematic kitchen environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXge7JyLUNfX02HcBL0TeD4FPPZIspycXWqUujm7ebdS1A42a9mUZXP1-ClgbWMmBpB2ZTZ_cRkX4Ipm1ubQP6chFGO4_99tK0-bpUm7Zra4VB6LrT8M245ijNek-eU9tucugAl4z7RMO5E99X-Vi-jtfxFxkgwLPNp13c0WWIXCpgrDculS9f-FVP9EqVDvJ26dNZFRQKYdi80N6DpcrYoJ1iGr5DV2HeUNsJ2upj8EpDNywG8KmS"/>
+</div>
+<div class="absolute bottom-1 right-1 w-8 h-8 bg-brand-green border-4 border-secondary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[14px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<h2 class="font-headline-md text-headline-md font-bold mb-1">Sofía Valencia</h2>
+<p class="font-body-md text-body-md opacity-80 mb-6">Auxiliar de Cocina 2 · Bodega Refrigerados</p>
+<div class="flex gap-4 w-full">
+<button class="flex-1 bg-primary-container text-on-primary-container h-touch-target-min rounded-xl font-button-text text-button-text hover:opacity-90 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">edit</span>
+                        Editar Perfil
+                    </button>
+</div>
+</div>
+<!-- Profile Info Section -->
+<div class="p-margin-screen flex-1 overflow-y-auto space-y-gutter">
+<div>
+<h4 class="font-label-sm text-label-sm font-bold text-on-surface-variant uppercase tracking-wider mb-4">Métricas del mes</h4>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant">
+<span class="block font-headline-md text-headline-md text-secondary">24</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Tomas realizadas</span>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant">
+<span class="block font-headline-md text-headline-md text-brand-green">98%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Precisión Voz</span>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-label-sm text-label-sm font-bold text-on-surface-variant uppercase tracking-wider mb-2">Información del Sistema</h4>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">ID de Empleado</span>
+<span class="font-body-md text-body-md font-bold">#44092-B</span>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">Última Sesión</span>
+<span class="font-body-md text-body-md font-bold">Hoy, 14:31</span>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">Idioma Voz</span>
+<span class="font-body-md text-body-md font-bold">Español (Latam)</span>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full h-touch-target-min border border-error text-error font-button-text text-button-text rounded-xl hover:bg-error/5 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">logout</span>
+                        Cerrar Sesión
+                    </button>
+</div>
+</div>
+<!-- SideNavBar Simulation - Bottom Footer Area -->
+<div class="p-4 bg-surface-container border-t border-outline-variant flex justify-around">
+<button class="flex flex-col items-center gap-1 text-on-surface-variant opacity-60 hover:opacity-100 transition-all">
+<span class="material-symbols-outlined">help</span>
+<span class="text-[10px] font-bold uppercase">Ayuda</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-[10px] font-bold uppercase">Mi Perfil</span>
+</button>
+</div>
+</aside>
+</main>
+<!-- FAB Action (Contextual Context) -->
+<button class="fixed bottom-margin-screen left-margin-screen bg-primary-container text-on-primary-container h-14 px-8 rounded-full shadow-lg flex items-center gap-3 font-button-text text-button-text hover:scale-105 active:scale-95 transition-all z-[60]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">mic</span>
+        Nueva Toma por Voz
+    </button>
+<script>
+        // Micro-interactions for the list cards
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.add('bg-secondary/5');
+                setTimeout(() => card.classList.remove('bg-secondary/5'), 200);
+            });
+        });
+
+        // Simple animation for the voice bar to simulate activity
+        const voiceBar = document.querySelector('.voice-bar');
+        setInterval(() => {
+            const randomWidth = Math.floor(Math.random() * (100 - 80 + 1)) + 80;
+            voiceBar.style.width = `${randomWidth}%`;
+            voiceBar.style.left = `${(100 - randomWidth) / 2}%`;
+        }, 3000);
+    </script>
+</body></html>

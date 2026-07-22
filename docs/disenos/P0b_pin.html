@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CLARA - Ingreso con PIN</title>
+<!-- Google Fonts: Poppins -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#ffd000",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#d1c6ab",
+                        "secondary-fixed": "#d2e4ff",
+                        "on-surface": "#1b1c1c",
+                        "primary-fixed": "#ffe082",
+                        "surface-tint": "#725c00",
+                        "tertiary-fixed": "#bce9ff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#001c37",
+                        "surface-container-highest": "#e4e2e1",
+                        "inverse-on-surface": "#f3f0f0",
+                        "surface-container-high": "#eae8e7",
+                        "surface-container": "#f0eded",
+                        "tertiary": "#2e657a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fbf9f8",
+                        "tertiary-container": "#a8ddf6",
+                        "secondary-container": "#69affe",
+                        "primary": "#0067B1",
+                        "secondary": "#0061a7",
+                        "on-surface-variant": "#4e4632",
+                        "on-tertiary-container": "#2b6278",
+                        "surface": "#fbf9f8",
+                        "tertiary-fixed-dim": "#99cee7",
+                        "surface-variant": "#e4e2e1",
+                        "inverse-primary": "#eec200",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#dcd9d9",
+                        "on-background": "#1b1c1c",
+                        "inverse-surface": "#303030",
+                        "on-primary-container": "#6f5a00",
+                        "on-secondary-fixed-variant": "#00497f",
+                        "surface-container-low": "#f6f3f2",
+                        "outline": "#898781",
+                        "primary-fixed-dim": "#eec200",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#004173",
+                        "on-primary-fixed-variant": "#564500",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#0d4d62",
+                        "background": "#fbf9f8",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#a0c9ff",
+                        "on-primary-fixed": "#231b00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-screen": "32px",
+                        "panel-action-width": "60%",
+                        "panel-info-width": "40%",
+                        "gutter": "24px",
+                        "touch-target-min": "48px",
+                        "card-padding": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Poppins"],
+                        "body-md": ["Poppins"],
+                        "button-text": ["Poppins"],
+                        "headline-lg": ["Poppins"],
+                        "label-sm": ["Poppins"],
+                        "display-numeric": ["Poppins"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "body-md": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "button-text": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "label-sm": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                        "display-numeric": ["28px", {"lineHeight": "34px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #F4FAFD;
+            color: #1b1c1c;
+            overflow: hidden;
+        }
+        .whisper-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 103, 177, 0.05);
+        }
+        .pin-dot {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pin-dot.active {
+            background-color: #0061a7;
+            transform: scale(1.2);
+        }
+        .keypad-animate {
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .key-active:active {
+            background-color: #f0f4f8;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md h-screen w-screen flex items-center justify-center p-gutter">
+<!-- Main Container: Centered Column (max 600px) -->
+<main class="w-full max-w-[600px] flex flex-col items-center gap-10">
+<!-- 1. Logo -->
+<div class="w-48 h-auto flex justify-center mb-4">
+<img class="w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgEEokjeuiNiK9k3YW-PW-WEQlT61xD1BVZAv_Z4PTCUxjSP23TeUm6ep12b8SpnDn6OCp39x55l6l7ockAngAqYyMjSRE2y1yIJRrbbMNzhtPrJWojnUEyQuxqaZd-SsgwgujU5ghkfGNpCNBllMXh652dCKo4EvQElS4HrJaK-MZdLZciEbZZDUc-nJ2-8rGeMAOKcjY1g3TKvyk2u4knJ_IQKGKPl7GoHMckixclwEVd17RKlDQ"/>
+</div>
+<!-- 2. Recognition Card (smaller/header) -->
+<div class="w-full bg-surface-container-lowest border border-[#CFD8E3] rounded-xl p-card-padding whisper-shadow flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-secondary-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly kitchen manager named Sofia. She is smiling warmly at the camera, wearing a clean, modern chef's uniform in a high-key, brightly lit professional kitchen setting. The image is crisp, with natural lighting and a minimalist, hygienic background that complements a modern UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDz57T566JbG5GJDoL3vXi-8Jw8Y4l7VzaqNAEiPBmdFNGh1C4Jat4AiOKWCM_csptMB6cFsC2A0U1xJnYBZ7gx9PN1JC3doa9O7BbM3iiO0XOnBIzLiNsQPDDkYU0op5TCcRxY1uUvd0PIvmALUtuF_ce3fkArMiOgmHsYCaCjIoYl1Vf_yUOmUCw4wkX9jCuCdrlMIcSdgazBpwec-99IJO_HF8XIKXugbrXBo4hm24HljAY6PBfP"/>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-secondary">Hola, Sofía</h1>
+<p class="text-on-surface-variant font-medium">Gerente de Cocina - Turno Mañana</p>
+</div>
+</div>
+<button class="flex items-center justify-center w-12 h-12 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+<!-- 3. PIN Section -->
+<div class="flex flex-col items-center gap-8 w-full keypad-animate">
+<!-- 4 progress dots -->
+<div class="flex gap-6">
+<div class="pin-dot w-5 h-5 rounded-full border-2 border-secondary" id="dot-1"></div>
+<div class="pin-dot w-5 h-5 rounded-full border-2 border-secondary" id="dot-2"></div>
+<div class="pin-dot w-5 h-5 rounded-full border-2 border-secondary" id="dot-3"></div>
+<div class="pin-dot w-5 h-5 rounded-full border-2 border-secondary" id="dot-4"></div>
+</div>
+<!-- Numerical PIN grid (3x4) -->
+<div class="grid grid-cols-3 gap-x-12 gap-y-6">
+<!-- Row 1 -->
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('1')">1</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('2')">2</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('3')">3</button>
+<!-- Row 2 -->
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('4')">4</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('5')">5</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('6')">6</button>
+<!-- Row 3 -->
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('7')">7</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('8')">8</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('9')">9</button>
+<!-- Row 4 -->
+<div class="w-[64px] h-[64px]"></div> <!-- Spacer -->
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center font-display-numeric text-display-numeric text-secondary whisper-shadow transition-all" onclick="pressKey('0')">0</button>
+<button class="key-active w-[64px] h-[64px] bg-white border border-[#CFD8E3] rounded-full flex items-center justify-center text-secondary whisper-shadow transition-all" onclick="deleteKey()">
+<span class="material-symbols-outlined text-3xl">backspace</span>
+</button>
+</div>
+<!-- Additional Help / Actions -->
+<div class="mt-4">
+<a class="font-button-text text-secondary hover:underline transition-all" href="#">¿Olvidaste tu PIN?</a>
+</div>
+</div>
+</main>
+<!-- Success Feedback Overlay (Hidden initially) -->
+<div class="fixed inset-0 bg-white/90 backdrop-blur-sm z-[100] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" id="success-overlay">
+<div class="bg-surface-container-lowest rounded-2xl p-10 whisper-shadow flex flex-col items-center gap-6 border border-secondary-container">
+<div class="w-20 h-20 bg-[#2E8540] rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-5xl font-bold">check</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-secondary">Acceso permitido</h2>
+<p class="text-on-surface-variant">Iniciando sesión como Sofía...</p>
+</div>
+</div>
+<script>
+        let pin = "";
+        const maxPinLength = 4;
+
+        function updateDots() {
+            for (let i = 1; i <= maxPinLength; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i <= pin.length) {
+                    dot.classList.add('active', 'bg-secondary');
+                } else {
+                    dot.classList.remove('active', 'bg-secondary');
+                }
+            }
+        }
+
+        function pressKey(num) {
+            if (pin.length < maxPinLength) {
+                pin += num;
+                updateDots();
+                
+                if (pin.length === maxPinLength) {
+                    // Simulate processing
+                    setTimeout(() => {
+                        validatePin();
+                    }, 300);
+                }
+            }
+        }
+
+        function deleteKey() {
+            if (pin.length > 0) {
+                pin = pin.slice(0, -1);
+                updateDots();
+            }
+        }
+
+        function validatePin() {
+            // Simulated validation
+            const overlay = document.getElementById('success-overlay');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-100');
+            
+            // Redirect or proceed logic would go here
+            console.log("PIN Entered:", pin);
+        }
+
+        // Physical Keyboard Support
+        window.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') {
+                pressKey(e.key);
+            } else if (e.key === 'Backspace') {
+                deleteKey();
+            }
+        });
+    </script>
+</body></html>

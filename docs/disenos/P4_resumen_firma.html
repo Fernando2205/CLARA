@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CLARA - Resumen y Firma</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .whisper-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 103, 177, 0.05);
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F4FAFD;
+        }
+        .voice-bar {
+            height: 4px;
+            width: 100%;
+            background-color: #FFD000;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f6f3f2",
+                        "surface-container-highest": "#e4e2e1",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#0067B1",
+                        "on-secondary-container": "#004173",
+                        "on-tertiary-container": "#2b6278",
+                        "secondary": "#0061a7",
+                        "surface-bright": "#fbf9f8",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#303030",
+                        "background": "#fbf9f8",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#69affe",
+                        "primary-fixed": "#ffe082",
+                        "on-surface": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "on-background": "#1b1c1c",
+                        "tertiary": "#2e657a",
+                        "on-surface-variant": "#4e4632",
+                        "error": "#ba1a1a",
+                        "primary-container": "#ffd000",
+                        "outline": "#898781",
+                        "outline-variant": "#CFD8E3",
+                        "custom-success": "#2E8540",
+                        "custom-error": "#C6262E"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "panel-info-width": "40%",
+                        "card-padding": "20px",
+                        "touch-target-min": "48px",
+                        "gutter": "24px",
+                        "panel-action-width": "60%",
+                        "margin-screen": "32px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Poppins"],
+                        "headline-md": ["Poppins"],
+                        "headline-lg": ["Poppins"],
+                        "button-text": ["Poppins"],
+                        "body-md": ["Poppins"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "button-text": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-md": ["15px", {"lineHeight": "22px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="bg-secondary text-on-secondary flex justify-between items-center w-full px-gutter h-16 shrink-0 z-10">
+<div class="flex items-center gap-4">
+<span class="text-headline-lg font-bold">CLARA</span>
+<div class="h-8 w-px bg-on-secondary/20 mx-2"></div>
+<h1 class="text-headline-md font-headline-md">Resumen de la toma</h1>
+</div>
+
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 hover:bg-secondary-container/20 rounded-full">notifications</button>
+<button class="material-symbols-outlined p-2 hover:bg-secondary-container/20 rounded-full">settings</button>
+<img class="w-10 h-10 rounded-full border-2 border-white/20 object-cover" data-alt="Professional headshot of a head chef wearing a clean white uniform in a high-end commercial kitchen setting. The lighting is bright and systematic, consistent with a modern corporate aesthetic. The chef has a friendly, organized expression. Background features stainless steel surfaces and blue accents consistent with the CLARA branding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzrv2nSRWsZbY4JCuOeZ1PvPoqQ52qry7Yiu_xNSO8acg4_HdJlUwVR-DdlUTDuEh0jfLNa8I3P57b436UY25V27s7pKeH2aj9uruyvxRX7wdDeQw15Whx0LIMhSNmTxwSslXbGb3xVUcfe_WOb_BkZi9HmBtDoBJko-NEngkTWkEhpmw3hlw22fYcwbPSH7ETK03dTn6OGJxoDy6ouoMwMAU-XFJ5RP5M5GtYcHMdNlutfgYcL2wx"/>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex flex-1 overflow-hidden">
+<!-- LEFT PANEL (60%) -->
+<section class="w-[60%] overflow-y-auto p-margin-screen flex flex-col gap-6">
+<!-- Stat Tiles -->
+<div class="grid grid-cols-3 gap-6">
+<div class="bg-white border border-[#CFD8E3] rounded-xl p-card-padding whisper-shadow flex flex-col items-center justify-center text-center">
+<span class="text-[22px] font-bold text-on-surface">47</span>
+<span class="text-label-sm font-normal text-on-surface-variant">referencias</span>
+</div>
+<div class="bg-white border border-[#CFD8E3] rounded-xl p-card-padding whisper-shadow flex flex-col items-center justify-center text-center">
+<span class="text-[22px] font-bold text-on-surface">12 min</span>
+<span class="text-label-sm font-normal text-on-surface-variant">duración</span>
+</div>
+<div class="bg-white border border-[#CFD8E3] rounded-xl p-card-padding whisper-shadow flex flex-col items-center justify-center text-center">
+<span class="text-[22px] font-bold text-on-surface">3</span>
+<span class="text-label-sm font-normal text-on-surface-variant">errores corregidos a tiempo</span>
+</div>
+</div>
+<!-- Diferencias vs Sistema Table Card -->
+<div class="bg-white border border-[#CFD8E3] rounded-2xl overflow-hidden whisper-shadow">
+<div class="px-6 py-4 border-b border-[#CFD8E3]">
+<h2 class="text-button-text text-secondary">Diferencias vs. sistema</h2>
+</div>
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low text-label-sm text-on-surface-variant">
+<tr>
+<th class="px-6 py-3 font-semibold">PRODUCTO</th>
+<th class="px-6 py-3 font-semibold text-center">SISTEMA</th>
+<th class="px-6 py-3 font-semibold text-center">REAL</th>
+<th class="px-6 py-3 font-semibold text-right">DELTA</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#CFD8E3]">
+<!-- ARROZ Row -->
+<tr class="h-[64px] hover:bg-surface-bright transition-colors">
+<td class="px-6 py-2 font-bold text-on-surface">ARROZ</td>
+<td class="px-6 py-2 text-center">743</td>
+<td class="px-6 py-2 text-center">9</td>
+<td class="px-6 py-2 text-right">
+<span class="flex items-center justify-end text-custom-error font-bold gap-1">
+<span class="material-symbols-outlined text-sm">arrow_downward</span>
+                                    −734
+                                </span>
+</td>
+</tr>
+<!-- ACEITE Row -->
+<tr class="h-[64px] hover:bg-surface-bright transition-colors">
+<td class="px-6 py-2 font-bold text-on-surface">ACEITE</td>
+<td class="px-6 py-2 text-center">851</td>
+<td class="px-6 py-2 text-center">850</td>
+<td class="px-6 py-2 text-right">
+<span class="flex items-center justify-end text-custom-success font-bold gap-1">
+<span class="material-symbols-outlined text-sm">arrow_downward</span>
+                                    −1
+                                </span>
+</td>
+</tr>
+<!-- AJÍ CASERO Row -->
+<tr class="h-[64px] bg-[#A1D6EF]/10 transition-colors">
+<td class="px-6 py-2 font-bold text-on-surface">AJÍ CASERO</td>
+<td class="px-6 py-2 text-center text-on-surface-variant">−2.690</td>
+<td class="px-6 py-2 text-center text-on-surface-variant">120</td>
+<td class="px-6 py-2 text-right">
+<span class="inline-flex items-center gap-1 bg-secondary text-on-secondary px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                                    corregido <span class="material-symbols-outlined text-xs">check</span>
+</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Accordions -->
+<div class="flex flex-col gap-3">
+<!-- Consistentes (Closed) -->
+<div class="bg-white border border-[#CFD8E3] rounded-xl overflow-hidden whisper-shadow">
+<button class="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-bright transition-colors">
+<span class="flex items-center gap-3 font-semibold text-on-surface">
+<span class="material-symbols-outlined text-custom-success">check_circle</span>
+                            Consistentes (39)
+                        </span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</button>
+</div>
+<!-- Con alerta resuelta (Open) -->
+<div class="bg-white border border-secondary rounded-xl overflow-hidden whisper-shadow">
+<button class="w-full flex items-center justify-between px-6 py-4 bg-secondary/5 transition-colors">
+<span class="flex items-center gap-3 font-semibold text-secondary">
+<span class="material-symbols-outlined">warning</span>
+                            Con alerta resuelta (8)
+                        </span>
+<span class="material-symbols-outlined">expand_less</span>
+</button>
+<div class="px-6 py-4 border-t border-secondary/20 flex flex-col gap-4">
+<div class="flex justify-between items-center p-3 bg-surface-container-low rounded-lg">
+<div class="flex flex-col">
+<span class="font-bold text-label-sm">TOMATE PERITA (CAJA)</span>
+<span class="text-xs text-on-surface-variant">Resolución: Re-pesaje manual confirmado</span>
+</div>
+<span class="material-symbols-outlined text-custom-success">verified</span>
+</div>
+<div class="flex justify-between items-center p-3 bg-surface-container-low rounded-lg">
+<div class="flex flex-col">
+<span class="font-bold text-label-sm">CEBOLLA BLANCA (BOLSA)</span>
+<span class="text-xs text-on-surface-variant">Resolución: Error de digitación corregido</span>
+</div>
+<span class="material-symbols-outlined text-custom-success">verified</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT PANEL (40%) -->
+<aside class="w-[40%] bg-white border-l border-outline-variant p-margin-screen relative">
+<div class="flex flex-col h-full gap-8">
+<!-- Voice Assistant Feedback Section -->
+<div class="flex flex-col items-center justify-center p-8 bg-surface-container-low rounded-2xl border border-[#CFD8E3] relative overflow-hidden">
+<div class="voice-bar"></div>
+<span class="material-symbols-outlined text-[48px] text-secondary mb-4">mic</span>
+<h3 class="text-headline-md text-secondary">Asistente de Voz</h3>
+<p class="text-body-md text-on-surface-variant mt-2 italic text-center">"Clara, prepara el documento para la firma final de la toma 452."</p>
+</div>
+<!-- Fixed Signature Card -->
+<div class="bg-white border-2 border-secondary rounded-2xl p-6 whisper-shadow mt-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary">history_edu</span>
+<h2 class="text-headline-md font-bold text-secondary">Firmar toma</h2>
+</div>
+<form class="space-y-4" onsubmit="event.preventDefault();">
+<div class="flex flex-col gap-2">
+<label class="text-label-sm text-on-surface-variant px-1">Usuario</label>
+<input class="h-touch-target-min w-full rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 px-4 transition-all" placeholder="ID de empleado" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-label-sm text-on-surface-variant px-1">Contraseña</label>
+<input class="h-touch-target-min w-full rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 px-4 transition-all" placeholder="••••••••" type="password"/>
+</div>
+<div class="pt-4">
+<button class="w-full h-touch-target-min bg-secondary text-on-secondary rounded-xl font-button-text flex items-center justify-center gap-2 hover:bg-secondary/90 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">lock_open</span>
+                                Firmar toma
+                            </button>
+</div>
+</form>
+<p class="text-[11px] text-center text-on-surface-variant mt-4 leading-tight">
+                        Al firmar, usted confirma que todos los datos presentados en este resumen coinciden con la toma física realizada. Esta acción quedará registrada en el log de auditoría.
+                    </p>
+</div>
+</div>
+<!-- Voice Bar Visualizer Overlay (Global for the right panel) -->
+<div class="absolute bottom-0 left-0 w-full">
+<div class="h-1 bg-primary-container"></div>
+</div>
+</aside>
+</main>
+
+<script>
+        // Simple Interaction logic for accordion
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Feedback effect
+                this.classList.add('opacity-80');
+                setTimeout(() => this.classList.remove('opacity-80'), 150);
+            });
+        });
+
+        // Simulating the "Listen" mode for Clara
+        let isListening = true;
+        const voiceBar = document.querySelector('.voice-bar');
+        setInterval(() => {
+            if(isListening) {
+                const height = Math.random() * 8 + 2;
+                voiceBar.style.height = `${height}px`;
+            }
+        }, 150);
+    </script>
+</body></html>

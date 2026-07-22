@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CLARA - Reporte y Envío</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#eec200",
+                        "secondary-fixed-dim": "#a0c9ff",
+                        "secondary-container": "#69affe",
+                        "primary-container": "#ffd000",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#eec200",
+                        "surface-tint": "#725c00",
+                        "outline": "#898781",
+                        "on-primary-fixed": "#231b00",
+                        "surface-dim": "#dcd9d9",
+                        "inverse-surface": "#303030",
+                        "tertiary-container": "#a8ddf6",
+                        "on-surface-variant": "#4e4632",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d2e4ff",
+                        "tertiary-fixed": "#bce9ff",
+                        "surface-container-highest": "#e4e2e1",
+                        "on-tertiary-fixed-variant": "#0d4d62",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#6f5a00",
+                        "on-secondary-fixed": "#001c37",
+                        "primary": "#0067B1",
+                        "background": "#F4FAFD", /* Overridden per prompt */
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f3f0f0",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#2e657a",
+                        "surface-bright": "#fbf9f8",
+                        "surface-container": "#f0eded",
+                        "on-secondary-fixed-variant": "#00497f",
+                        "on-primary-fixed-variant": "#564500",
+                        "surface": "#fbf9f8",
+                        "tertiary-fixed-dim": "#99cee7",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#CFD8E3", /* Overridden per prompt */
+                        "surface-container-high": "#eae8e7",
+                        "secondary": "#0067B1", /* Specific Brand Blue from prompt */
+                        "on-surface": "#333333", /* Specific Dark Text from prompt */
+                        "surface-variant": "#e4e2e1",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f6f3f2",
+                        "on-tertiary-container": "#2b6278",
+                        "primary-fixed": "#ffe082",
+                        "on-background": "#333333",
+                        "on-secondary-container": "#004173",
+                        "brand-success": "#2E8540"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "16px", /* Specifically 16px as requested */
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-screen": "32px",
+                        "card-padding": "24px",
+                        "gutter": "24px",
+                        "touch-target-min": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Poppins"],
+                        "headline-md": ["Poppins"],
+                        "button-text": ["Poppins"],
+                        "label-sm": ["Poppins"],
+                        "display-numeric": ["Poppins"],
+                        "body-md": ["Poppins"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "button-text": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-sm": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                        "display-numeric": ["28px", {"lineHeight": "34px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "body-md": ["15px", {"lineHeight": "22px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Poppins', sans-serif; background-color: #F4FAFD; color: #333333; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .whisper-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 103, 177, 0.05);
+        }
+        .pdf-page {
+            aspect-ratio: 1 / 1.414;
+            background: white;
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar (Derived from JSON with Manual Overrides) -->
+<header class="flex justify-between items-center px-8 w-full h-[64px] bg-[#0067B1] text-white sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold tracking-tight">Acta de inventario</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-label-sm font-bold leading-none">Carlos Ramírez</p>
+<p class="text-[10px] opacity-80 uppercase tracking-widest">Jefe de Cocina</p>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden bg-white/10 flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged male chef wearing a white uniform, smiling warmly in a bright modern kitchen environment. The lighting is crisp and high-key, reflecting a corporate and hygienic atmosphere. The background is softly blurred to keep focus on the individual, using a clean light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCn97crVChlxvEqtTMV-dkfCdepjDDlVRwNLCDL1gLRMZJtlYAqroZGy3gfwE2WeAX3DH6IdHVbAUxnmhu9Cw1KoayGPPIq8Y-7mlsk3ltrG7jBQdzfTbXqEOBqJ_k29XeKclI3pFxfnAZ0qrLMXVC-nGEAyIMEGktZAo634CA3rwaA-VcHKXyR3LZvRr9SlJJoBWXmXnG_ux4tcB3Pt44Mxxde1P1X5CM4rmZnRO4dBbsK2CwF9QrL"/>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Layout -->
+<main class="flex flex-1 overflow-hidden p-8 gap-gutter">
+<!-- LEFT COLUMN: PDF Preview (~55%) -->
+<section class="w-[55%] flex flex-col h-full">
+<div class="flex-1 bg-white rounded-xl border border-[#CFD8E3] whisper-shadow overflow-hidden flex flex-col">
+<!-- Toolbar for PDF -->
+<div class="h-14 border-b border-[#CFD8E3] bg-surface-container-low px-6 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">description</span>
+<span class="font-button-text text-on-surface">ACTA_FUENTES_AYB_20260722.pdf</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-xl">zoom_in</span>
+</button>
+<div class="w-[1px] h-4 bg-outline-variant"></div>
+<span class="text-label-sm font-medium text-on-surface-variant">Pág. 1 de 3</span>
+</div>
+</div>
+<!-- PDF Content Emulation -->
+<div class="flex-1 overflow-y-auto p-12 bg-surface-dim/30 flex justify-center scrollbar-hide">
+<div class="pdf-page w-full max-w-[500px] border border-outline-variant shadow-sm flex flex-col">
+<!-- PDF Header -->
+<div class="bg-secondary p-8 flex justify-between items-center">
+<img alt="CLARA Logo" class="h-10 filter brightness-0 invert" src="https://lh3.googleusercontent.com/aida/AP1WRLv0fppn_Py03B8x6Wrw3_GbVNqPDxa8Ns0lsV7Qp89PEYKhPkXZNT3XeGkK0IW715N7S8JYUCLbDz6YugjSts1TwOu_tCEX0QGJJaJpe7egZHCW1Lu5-EGxzYd5OqGrl-B0pljPo3wS2Zr8_rb-k_U1vpva6uRQV75pNiQfKI1BD9YlwfVRt3_qCBOGJYbX7cQtAUr9FuhLNLVgnkGH1juRi-C_kDurCrIu26GqBpqUJ_JMUhtXSK_3c3g"/>
+<div class="text-white text-right">
+<h2 class="font-bold text-lg uppercase tracking-wider">Reporte de Existencias</h2>
+<p class="text-xs opacity-80">Fecha: 22 jul 2026 · 14:31</p>
+</div>
+</div>
+<!-- PDF Body Content -->
+<div class="p-8 flex flex-col gap-6 flex-1 bg-white">
+<div class="space-y-2">
+<h3 class="font-bold text-secondary text-sm border-b-2 border-primary-container inline-block pb-1">1. RESUMEN GENERAL</h3>
+<p class="text-[11px] leading-relaxed text-on-surface">Acta de toma física del Restaurante Fuentes — AyB (Piscilago). 47 referencias capturadas por voz con CLARA, 3 correcciones en vivo, 2 anomalías saneadas.</p>
+</div>
+<table class="w-full text-[10px] border-collapse">
+<thead>
+<tr class="bg-surface-container text-left">
+<th class="p-2 border border-outline-variant font-bold">Código</th>
+<th class="p-2 border border-outline-variant font-bold">Insumo</th>
+<th class="p-2 border border-outline-variant font-bold text-center">Cant.</th>
+<th class="p-2 border border-outline-variant font-bold">Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="p-2 border border-outline-variant">7290</td>
+<td class="p-2 border border-outline-variant">ACEITE (Liter)</td>
+<td class="p-2 border border-outline-variant text-center">12</td>
+<td class="p-2 border border-outline-variant text-brand-success font-bold uppercase">Óptimo</td>
+</tr>
+<tr>
+<td class="p-2 border border-outline-variant">7301</td>
+<td class="p-2 border border-outline-variant">ARROZ (Kilogram)</td>
+<td class="p-2 border border-outline-variant text-center">04</td>
+<td class="p-2 border border-outline-variant text-error font-bold uppercase">Bajo</td>
+</tr>
+<tr>
+<td class="p-2 border border-outline-variant">—</td>
+<td class="p-2 border border-outline-variant">GUISO CRIOLLO (PA)</td>
+<td class="p-2 border border-outline-variant text-center">45</td>
+<td class="p-2 border border-outline-variant text-brand-success font-bold uppercase">Óptimo</td>
+</tr>
+</tbody>
+</table>
+<!-- Signature Block -->
+<div class="mt-auto pt-12 grid grid-cols-2 gap-12">
+<div class="text-center">
+<div class="border-t border-on-surface pt-2">
+<p class="font-bold text-[10px]">Firma Responsable</p>
+<p class="text-[9px] text-on-surface-variant">ID: 88.231.002</p>
+</div>
+</div>
+<div class="text-center">
+<div class="border-t border-on-surface pt-2">
+<p class="font-bold text-[10px]">Sello de Verificación</p>
+<p class="text-[9px] text-on-surface-variant">CLARA · Verificación de integridad</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: Actions (~45%) -->
+<section class="w-[45%] flex flex-col gap-6">
+<!-- Download Chips -->
+<div class="flex flex-col gap-3">
+<span class="text-label-sm font-bold uppercase tracking-widest text-on-surface-variant">Descargar Archivos</span>
+<div class="flex gap-3">
+<button class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 border-secondary text-secondary font-button-text hover:bg-secondary/5 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span>PDF</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 border-secondary text-secondary font-button-text hover:bg-secondary/5 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span>Excel</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 border-secondary text-secondary font-button-text hover:bg-secondary/5 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span>CSV para ERP</span>
+</button>
+</div>
+</div>
+<!-- Send Section -->
+<div class="bg-white rounded-xl border border-[#CFD8E3] whisper-shadow p-6 flex flex-col gap-6">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Enviar a Carlos Ramírez</h2>
+<p class="text-body-md text-on-surface-variant">Seleccione el canal de envío para el Jefe de Cocina</p>
+</div>
+<div class="flex gap-4">
+<!-- Telegram - Active -->
+<button class="group flex flex-col items-center gap-2">
+<div class="w-16 h-16 rounded-xl bg-[#0088cc] flex items-center justify-center text-white shadow-lg active:scale-90 transition-all">
+<span class="material-symbols-outlined text-3xl">send</span>
+</div>
+<span class="text-label-sm font-bold">Telegram</span>
+</button>
+<!-- Email - Active -->
+<button class="group flex flex-col items-center gap-2">
+<div class="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center text-white active:scale-90 transition-all">
+<span class="material-symbols-outlined text-3xl">mail</span>
+</div>
+<span class="text-label-sm font-bold">Correo</span>
+</button>
+<!-- WhatsApp - Disabled -->
+<div class="flex flex-col items-center gap-2 opacity-40">
+<div class="w-16 h-16 rounded-xl bg-slate-300 flex items-center justify-center text-on-surface cursor-not-allowed">
+<span class="material-symbols-outlined text-3xl">chat</span>
+</div>
+<div class="text-center">
+<p class="text-label-sm font-bold">WhatsApp</p>
+<p class="text-[9px] uppercase font-black text-on-surface-variant">próximamente</p>
+</div>
+</div>
+<!-- Teams - Disabled -->
+<div class="flex flex-col items-center gap-2 opacity-40">
+<div class="w-16 h-16 rounded-xl bg-slate-300 flex items-center justify-center text-on-surface cursor-not-allowed">
+<span class="material-symbols-outlined text-3xl">groups</span>
+</div>
+<div class="text-center">
+<p class="text-label-sm font-bold">Teams</p>
+<p class="text-[9px] uppercase font-black text-on-surface-variant">próximamente</p>
+</div>
+</div>
+</div>
+<!-- Confirmation Banner -->
+<div class="bg-[#2E8540]/10 border border-[#2E8540]/20 rounded-lg p-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+<div class="w-10 h-10 rounded-full bg-brand-success flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<p class="font-bold text-brand-success text-body-md">Reporte enviado con éxito</p>
+<p class="text-label-sm text-brand-success/80">Enviado por Telegram · 14:32</p>
+</div>
+</div>
+</div>
+<!-- Contextual Help Card -->
+<div class="mt-auto bg-[#E8F4FB] border border-[#A1D6EF] rounded-xl p-6 flex gap-4">
+<span class="material-symbols-outlined text-[#0067B1] text-3xl">lightbulb</span>
+<div>
+<p class="font-bold text-[#333333]">¿Necesitas hacer cambios?</p>
+<p class="text-body-md text-[#52514E]">Puedes volver a la toma para editar registros antes del envío definitivo.</p>
+<button class="mt-3 text-secondary font-bold text-sm flex items-center gap-1 hover:underline">
+                        Volver al editor
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- SideNavBar (Supressed per UX Goal: Focused Transactional State) -->
+<!-- The "P5 - Reporte y Envío" is a terminal task page, navigation is hidden to focus on the report delivery -->
+<!-- Micro-interactions Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animation for download buttons
+            const downloadBtns = document.querySelectorAll('button[class*="border-secondary"]');
+            downloadBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span><span>Procesando...</span>';
+                    setTimeout(() => {
+                        this.innerHTML = '<span class="material-symbols-outlined text-[20px]">check</span><span>Listo</span>';
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    }, 1500);
+                });
+            });
+
+            // Pulse effect for the success banner icon
+            const successIcon = document.querySelector('.bg-brand-success');
+            if (successIcon) {
+                setInterval(() => {
+                    successIcon.classList.add('ring-4', 'ring-brand-success/20');
+                    setTimeout(() => {
+                        successIcon.classList.remove('ring-4', 'ring-brand-success/20');
+                    }, 1000);
+                }, 3000);
+            }
+        });
+    </script>
+</body></html>
