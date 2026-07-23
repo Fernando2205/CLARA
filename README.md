@@ -37,35 +37,130 @@ Principios no negociables:
 
 ## Estado del proyecto
 
-**Fase actual: especificación completa, desarrollo por iniciar.** El repo contiene hoy la documentación (fuente de verdad), el catálogo de datos real y los mockups de referencia. El código de `frontend/` y `backend/` se construye a partir de estas specs siguiendo el orden de la sección 8 del plan.
+**Fase actual: frontend P0–P6 y backend MVP implementados.** La captura usa FastAPI cuando está disponible y conserva el parser local como respaldo offline. El catálogo real se carga en SQLite, GPT estructura las frases sin decidir SKUs, las reglas V1–V7 validan los conteos y las sesiones pueden firmarse y exportarse.
 
 ```
 clara/
-└── docs/                               # LO QUE EXISTE HOY
-    ├── CLARA_plan_desarrollo_mvp.md    # Spec técnica: API, datos, prompts, reglas, orden de build
-    ├── CLARA_guia_diseno_ui.md         # Design system: tokens, pantallas, componentes, microcopy
-    ├── CLARA_prompts_diseno.md         # Prompts por pantalla para agentes de diseño
-    ├── catalogo_piscilago.json         # Catálogo real: 1.405 SKUs, 8 bodegas
-    └── disenos/                        # Mockups HTML de referencia (P0-P6)
+├── frontend/                           # React + Vite PWA, pantallas P0–P6
+├── backend/                            # FastAPI + SQLite + OpenAI + reportes
+│   ├── app/routers/                    # Contratos HTTP
+│   ├── app/services/                   # GPT, matcher, reglas, PDF y envíos
+│   ├── seed/                           # Carga del catálogo y usuarios demo
+│   └── tests/                          # Flujo API y casos del parser
+└── docs/                               # Plan, guía, catálogo y mockups
 ```
 
-Estructura objetivo al finalizar (definida en la sección 1 del plan):
+## Ejecutar la aplicación
 
+Requiere Node 18+ y Python 3.11+.
+
+### 1. Configurar el backend y OpenAI
+
+```bash
+cd backend
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
 ```
-clara/
-├── frontend/          # React + Vite PWA (pantallas P0-P6)
-├── backend/           # FastAPI: /extract /validate /sessions /report /transcribe
-│   └── seed/          # catalogo_piscilago.json -> SQLite
-└── docs/
+
+Edita `backend/.env`:
+
+```dotenv
+OPENAI_API_KEY=tu_clave_de_openai
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_TRANSCRIBE_MODEL=whisper-1
 ```
 
-## Primeros pasos de desarrollo (hoy)
+La clave vive únicamente en el servidor. No debe llamarse `VITE_OPENAI_API_KEY` ni aparecer en archivos de React. Si se deja vacía, CLARA funciona con el parser local y `/health` muestra `"openai_configurado": false`.
 
-1. Crear `backend/` con FastAPI: `/health`, `seed.py` (JSON -> SQLite, criterio: 1.405 filas en `articulos`) y CORS.
-2. Implementar `/extract` con GPT usando el prompt de la sección 4 del plan; validar contra sus 10 tests.
-3. Crear `frontend/` con Vite + PWA y las pantallas esqueleto navegables.
-4. Desplegar dummy desde el día 1 (Vercel + Railway/Render): cámara y micrófono solo funcionan en `localhost` o bajo HTTPS.
-5. Poner tope de gasto (USD 10) en el dashboard de OpenAI.
+Inicia la API:
+
+```bash
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+La primera ejecución crea `clara.db` y carga 1.405 artículos. Abre la documentación interactiva en `http://127.0.0.1:8000/docs`.
+
+### 2. Iniciar el frontend
+
+En otra terminal:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Abre `http://localhost:5173`. El PIN de demostración es `1234`.
+
+## API implementada
+
+| Endpoint | Función |
+|---|---|
+| `GET /health` | Estado de SQLite y configuración de OpenAI, sin exponer secretos |
+| `POST /extract` | Structured Outputs + matcher determinístico; respaldo local a los 3 s |
+| `POST /assistant` | Distingue captura, consulta, explicación, ayuda y apertura del inventario |
+| `GET /inventory` | Devuelve todas las referencias de la bodega y prioriza el conteo físico |
+| `POST /validate` | Reglas V1–V7 en el orden definido por el plan |
+| `POST /transcribe` | Audio multipart a `whisper-1` en español |
+| `POST /speak` | Respuesta WAV natural con `gpt-audio-1.5` y caché privada |
+| `POST /sessions` | Abre una toma para usuario, bodega y modo |
+| `POST/PATCH /sessions/{id}/registros` | Guarda lotes offline y corrige registros |
+| `POST /sessions/{id}/firmar` | Firma SHA-256 y vuelve la sesión inmutable |
+| `GET /sessions/{id}/resumen` | Avance, alertas, correcciones y diferencias |
+| `POST /report` | PDF, XLSX y CSV ERP; Telegram/Resend opcionales |
+
+Sin tokens de Telegram o Resend, el envío responde como simulado y no interrumpe el demo.
+
+## Asistente conversacional y voz
+
+En la captura puedes dictar o escribir:
+
+```text
+¿Tenemos leche?
+Muéstrame todo el inventario
+Quedan noventa kilos de ajonjolí
+¿Por qué dudas?
+Perdón, eran nueve
+```
+
+Las consultas no abren una tarjeta de captura: CLARA responde en la conversación,
+consulta SQLite y habla mediante OpenAI. Las afirmaciones de conteo sí muestran la
+tarjeta. Si hay una alerta, la voz lee la pregunta, explica la razón y ofrece una
+recomendación. El botón `Voz activa` permite silenciarla y `Repetir` reproduce la
+última respuesta.
+
+La voz se configura exclusivamente en `backend/.env`:
+
+```dotenv
+OPENAI_VOICE_MODEL=gpt-audio-1.5
+OPENAI_VOICE=coral
+VOICE_CACHE_DIR=./voice_cache
+```
+
+Si OpenAI no responde, el frontend utiliza `speechSynthesis` como respaldo. Los
+audios generados se almacenan por hash en una carpeta ignorada por Git para reducir
+latencia y consumo. El endpoint limita solicitudes repetidas para evitar abuso.
+
+## Verificación
+
+```bash
+cd backend
+source .venv/bin/activate
+pytest -q
+
+cd ../frontend
+npm run build
+```
+
+## Próximos pasos de desarrollo
+
+1. Añadir la captura del blob de `MediaRecorder` como respaldo de Web Speech.
+2. Sincronizar toda la cola histórica de Zustand, no solo los registros nuevos.
+3. Conectar firma y descarga del frontend a las sesiones reales.
+4. Desplegar bajo HTTPS y configurar límites de gasto/uso en OpenAI.
 
 Los comandos de arranque detallados de cada servicio se agregarán a este README a medida que las carpetas existan.
 

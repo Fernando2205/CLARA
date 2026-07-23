@@ -1,0 +1,15 @@
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+
+backend/.env
+backend/.venv/
+backend/clara.db
+backend/generated/
+backend/voice_cache/
+backend/**/__pycache__/
+backend/.pytest_cache/
+
+.DS_Store
+*.log
