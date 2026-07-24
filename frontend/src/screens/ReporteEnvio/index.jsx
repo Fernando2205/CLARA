@@ -10,10 +10,11 @@ import {
   MessageCircleMore,
   Send,
   ShieldCheck,
+  Trash2,
   Users,
 } from 'lucide-react'
 import { Button, Logo, Toast, TopBar } from '../../components/ui'
-import { API_URL, getInventory, getSessionSummary, requestReport } from '../../lib/api'
+import { API_URL, deleteReportFiles, getInventory, getSessionSummary, requestReport } from '../../lib/api'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionStore } from '../../stores/session'
 
@@ -47,6 +48,7 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
   const [deliveries, setDeliveries] = useState({})
   const [toast, setToast] = useState('')
   const [stamped, setStamped] = useState(!user.firma || !signature)
+  const [deleting, setDeleting] = useState(false)
 
   const notify = (message) => {
     setToast(message)
@@ -85,6 +87,21 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
       notify('No pudimos regenerar el reporte con ese alcance.')
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const borrarArchivos = async () => {
+    if (!sessionId || !archivos) return
+    if (!window.confirm('¿Borrar los archivos generados de este reporte? La toma firmada y sus datos no se ven afectados.')) return
+    setDeleting(true)
+    try {
+      await deleteReportFiles(sessionId)
+      setArchivos(null)
+      notify('Archivos borrados. Se regeneran la próxima vez que los pidas.')
+    } catch {
+      notify('No pudimos borrar los archivos generados.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -219,7 +236,9 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
                         className={`firma-stamp ${stamped ? 'firma-stamp-settled' : 'firma-stamp-animating'}`}
                         src={user.firma}
                         alt="Firma del responsable"
-                        onAnimationEnd={() => setStamped(true)}
+                        onAnimationEnd={(event) => {
+                          if (event.animationName === 'firma-trazo') setStamped(true)
+                        }}
                       />
                     )}
                   </div>
@@ -231,8 +250,23 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
         </section>
         <aside className="delivery-column">
           <section className="delivery-card">
-            <span className="eyebrow">Archivos</span>
-            <h2>Descargar formatos</h2>
+            <div className="delivery-card-header">
+              <div>
+                <span className="eyebrow">Archivos</span>
+                <h2>Descargar formatos</h2>
+              </div>
+              {archivos && (
+                <button
+                  type="button"
+                  className="report-delete-button"
+                  onClick={borrarArchivos}
+                  disabled={deleting}
+                  aria-label="Borrar archivos generados"
+                >
+                  <Trash2 size={16} /> {deleting ? 'Borrando…' : 'Borrar'}
+                </button>
+              )}
+            </div>
             <div className="format-list">
               {formats.map(({ key, label, caption, icon: Icon }) => (
                 <a
@@ -248,6 +282,11 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
                 </a>
               ))}
             </div>
+            {!archivos && (
+              <button type="button" className="report-shortcut" onClick={() => cambiarAlcance(alcance)} disabled={generating}>
+                {generating ? 'Generando…' : 'Generar de nuevo'}
+              </button>
+            )}
           </section>
           <section className="delivery-card">
             <span className="eyebrow">Compartir</span>

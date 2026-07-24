@@ -61,13 +61,12 @@ export function toStoreUser(usuario) {
   }
 }
 
-export function registerUser({ nombre, cedula, correo, pin, foto, firma }) {
+export function registerUser({ nombre, cedula, correo, pin, firma }) {
   const formData = new FormData()
   formData.append('nombre', nombre)
   formData.append('cedula', cedula)
   formData.append('correo', correo)
   formData.append('pin', pin)
-  formData.append('foto', foto, 'rostro.jpg')
   formData.append('firma', firma, 'firma.png')
   return apiFetchForm('/auth/register', formData, 12000)
 }
@@ -76,12 +75,6 @@ export function updateSignature(userId, firma) {
   const formData = new FormData()
   formData.append('firma', firma, 'firma.png')
   return apiFetchForm(`/auth/usuarios/${userId}/firma`, formData, 8000)
-}
-
-export function faceLogin(foto) {
-  const formData = new FormData()
-  formData.append('foto', foto, 'rostro.jpg')
-  return apiFetchForm('/auth/face-login', formData, 8000)
 }
 
 export function credentialsLogin({ usuario, password }) {
@@ -172,6 +165,10 @@ export function saveInventoryRecord(sessionId, payload) {
   }, 5000)
 }
 
+export function listUserSessions(userId) {
+  return apiFetch(`/sessions?usuario_id=${userId}`, {}, 6000)
+}
+
 export function getSessionSummary(sessionId) {
   return apiFetch(`/sessions/${sessionId}/resumen`, {}, 6000)
 }
@@ -188,6 +185,10 @@ export function requestReport(sessionId, { formatos, enviar, alcance = 'contados
     method: 'POST',
     body: JSON.stringify({ sesion_id: sessionId, formatos, enviar, alcance }),
   }, 20000)
+}
+
+export function deleteReportFiles(sessionId) {
+  return apiFetch(`/report/${sessionId}`, { method: 'DELETE' }, 8000)
 }
 
 export { API_URL }

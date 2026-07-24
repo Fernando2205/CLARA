@@ -9,7 +9,14 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Body, Depends, HTTPException
 
 from ..db import get_db
-from ..models import RecordCreate, RecordUpdate, SessionCreate, SessionCreated, SignRequest
+from ..models import (
+    RecordCreate,
+    RecordUpdate,
+    SessionCreate,
+    SessionCreated,
+    SessionHistoryItem,
+    SignRequest,
+)
 from ..services.credentials import verify_credentials
 
 router = APIRouter(prefix="/sessions", tags=["sesiones"])
@@ -56,6 +63,39 @@ def create_session(
         "SELECT COUNT(*) FROM articulos WHERE bodega = ?", (request.bodega,)
     ).fetchone()[0]
     return SessionCreated(sesion_id=session_id, total_referencias=total)
+
+
+@router.get("", response_model=list[SessionHistoryItem])
+def list_sessions(
+    usuario_id: int,
+    connection: sqlite3.Connection = Depends(get_db),
+) -> list[SessionHistoryItem]:
+    rows = connection.execute(
+        """
+        SELECT s.id, s.bodega, s.inicio, s.fin,
+               COUNT(r.id) AS contadas,
+               COALESCE(SUM(r.corregido), 0) AS corregidos
+        FROM sesiones s
+        LEFT JOIN registros r ON r.sesion_id = s.id
+        WHERE s.usuario_id = ? AND s.firmada = 1
+        GROUP BY s.id
+        ORDER BY s.fin DESC
+        """,
+        (usuario_id,),
+    ).fetchall()
+    items = []
+    for row in rows:
+        start = datetime.fromisoformat(row["inicio"])
+        end = datetime.fromisoformat(row["fin"])
+        items.append(SessionHistoryItem(
+            sesion_id=row["id"],
+            bodega=row["bodega"],
+            fin=row["fin"],
+            contadas=row["contadas"],
+            tiempo_min=round((end - start).total_seconds() / 60, 1),
+            corregidos=row["corregidos"],
+        ))
+    return items
 
 
 @router.post("/{session_id}/registros")

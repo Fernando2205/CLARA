@@ -111,6 +111,13 @@ def test_inventory_session_flow_and_reports():
         assert signed.status_code == 200
         assert len(signed.json()["hash_firma"]) == 64
 
+        history = client.get("/sessions", params={"usuario_id": 1})
+        assert history.status_code == 200
+        entry = next(item for item in history.json() if item["sesion_id"] == session_id)
+        assert entry["bodega"] == WAREHOUSE
+        assert entry["contadas"] == 1
+        assert entry["corregidos"] == 1
+
         immutable = client.patch(
             f"/sessions/{session_id}/registros/{record_id}",
             json={"cantidad_fisica": 14},
@@ -133,6 +140,21 @@ def test_inventory_session_flow_and_reports():
             download = client.get(url)
             assert download.status_code == 200
             assert download.content
+
+        deleted = client.delete(f"/report/{session_id}")
+        assert deleted.status_code == 200
+        assert deleted.json()["eliminado"] is True
+        for url in result["archivos"].values():
+            assert client.get(url).status_code == 404
+
+        # Idempotente: borrar de nuevo (o algo que nunca se generó) no falla.
+        assert client.delete(f"/report/{session_id}").status_code == 200
+        assert client.delete("/report/no-existe").status_code == 200
+
+        # ".." literal se colapsa antes de llegar al servidor (normalización
+        # estándar de URL); %2e%2e sí llega intacto y debe rechazarlo el guard.
+        traversal = client.delete("/report/%2e%2e")
+        assert traversal.status_code == 400
 
 
 def test_validate_integer_rule():

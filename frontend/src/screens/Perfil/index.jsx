@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   Bell,
@@ -9,22 +9,26 @@ import {
   FileText,
   LogOut,
   PenLine,
+  ScanFace,
   SlidersHorizontal,
+  Trash2,
   UserRound,
   Volume2,
   VolumeX,
 } from 'lucide-react'
 import { Avatar, Badge, Button, Logo, Toast } from '../../components/ui'
 import { SignatureField } from '../../components/SignaturePad'
-import { API_URL, updateSignature } from '../../lib/api'
+import { API_URL, deleteReportFiles, listUserSessions, requestReport, updateSignature } from '../../lib/api'
 import { useAuthStore } from '../../stores/auth'
+import { useCamera } from '../../lib/useCamera'
+import { enroll, hasEnrolledFace } from '../../lib/facial'
 
-const history = [
-  { date: '23 jul 2026 · 14:32', place: 'Restaurante Fuentes · AyB', refs: 47, time: 12, corrections: 3 },
-  { date: '21 jul 2026 · 09:15', place: 'Almacén · Alimentos y Bebidas', refs: 112, time: 28, corrections: 0 },
-  { date: '20 jul 2026 · 17:02', place: 'Kiosco Taquilla · AyB', refs: 85, time: 19, corrections: 1 },
-  { date: '19 jul 2026 · 06:45', place: 'Zoológico · Alimentos', refs: 32, time: 8, corrections: 5 },
-]
+const WAREHOUSE_LABELS = {
+  'STOCK RESTAURANTE FUENTES AYB': 'Restaurante Fuentes · AyB',
+  'STOCK ALMACEN AYB': 'Almacén · Alimentos y Bebidas',
+  'STOCK KIOSCO TAQUILLA AYB': 'Kiosco Taquilla · AyB',
+  'STOCK KIOSCO PISCIGIROS AYB': 'Kiosco Piscigiros · AyB',
+}
 
 export default function Perfil({ onHome, onSignOut }) {
   const user = useAuthStore((state) => state.user)
@@ -33,11 +37,79 @@ export default function Perfil({ onHome, onSignOut }) {
   const [toast, setToast] = useState('')
   const [editingFirma, setEditingFirma] = useState(false)
   const [savingFirma, setSavingFirma] = useState(false)
+  const [enrolandoRostro, setEnrolandoRostro] = useState(false)
+  const [capturandoRostro, setCapturandoRostro] = useState(false)
+  const [rostroEnrolado, setRostroEnrolado] = useState(() => hasEnrolledFace(user.id))
+  const [history, setHistory] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(true)
+  const [openingId, setOpeningId] = useState('')
+  const [deletingId, setDeletingId] = useState('')
   const firmaRef = useRef(null)
+  const { videoRef, cameraState } = useCamera(enrolandoRostro)
 
   const notify = (message) => {
     setToast(message)
     window.setTimeout(() => setToast(''), 2600)
+  }
+
+  useEffect(() => {
+    let active = true
+    listUserSessions(user.id)
+      .then((items) => { if (active) setHistory(items) })
+      .catch(() => { if (active) notify('No pudimos cargar tu historial de tomas.') })
+      .finally(() => { if (active) setLoadingHistory(false) })
+    return () => { active = false }
+  }, [user.id])
+
+  const abrirReporte = async (sesionId) => {
+    if (openingId) return
+    setOpeningId(sesionId)
+    try {
+      const response = await requestReport(sesionId, { formatos: ['pdf'], enviar: {}, alcance: 'contados' })
+      const url = response.archivos?.pdf
+      if (!url) throw new Error('El acta no incluyó un PDF')
+      window.open(`${API_URL}${url}`, '_blank', 'noopener')
+    } catch {
+      notify('No pudimos abrir ese reporte. Intenta de nuevo.')
+    } finally {
+      setOpeningId('')
+    }
+  }
+
+  const borrarReporte = async (sesionId) => {
+    if (deletingId) return
+    if (!window.confirm('¿Borrar esta toma de la vista? Los archivos generados se eliminan; la toma firmada sigue guardada y se puede regenerar si vuelve a hacer falta.')) return
+    setDeletingId(sesionId)
+    try {
+      await deleteReportFiles(sesionId)
+      setHistory((current) => current.filter((item) => item.sesion_id !== sesionId))
+      notify('Reporte borrado de la vista.')
+    } catch {
+      notify('No pudimos borrar los archivos generados.')
+    } finally {
+      setDeletingId('')
+    }
+  }
+
+  const enrolarRostro = async () => {
+    setCapturandoRostro(true)
+    try {
+      await enroll(videoRef.current, {
+        id: user.id,
+        nombre: user.nombre,
+        cargo: user.cargo,
+        turno: user.turno,
+        bodega_asignada: user.bodega,
+        firma_url: user.firma ? user.firma.replace(API_URL, '') : null,
+      })
+      setRostroEnrolado(true)
+      setEnrolandoRostro(false)
+      notify('Rostro enrolado en este dispositivo.')
+    } catch (err) {
+      notify(err.message || 'No pudimos leer tu rostro. Verifica el permiso de cámara.')
+    } finally {
+      setCapturandoRostro(false)
+    }
   }
 
   const guardarFirma = async () => {
@@ -80,22 +152,54 @@ export default function Perfil({ onHome, onSignOut }) {
             <div>
               <span className="eyebrow">Actividad</span>
               <h1>Historial de tomas</h1>
-              <p>Consulta y vuelve a generar los reportes de inventario finalizados.</p>
+              <p>Haz clic en una toma para abrir su acta en PDF.</p>
             </div>
             <button className="filter-button"><SlidersHorizontal size={18} /> Filtrar</button>
           </div>
           <div className="history-list">
+            {loadingHistory && <p className="preconteo-status">Cargando tu historial…</p>}
+            {!loadingHistory && !history.length && (
+              <p className="profile-signature-empty">Todavía no tienes tomas firmadas.</p>
+            )}
             {history.map((item) => (
-              <article className="history-card" key={`${item.date}-${item.place}`}>
+              <article
+                className="history-card history-card-clickable"
+                key={item.sesion_id}
+                role="button"
+                tabIndex={0}
+                onClick={() => abrirReporte(item.sesion_id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    abrirReporte(item.sesion_id)
+                  }
+                }}
+              >
                 <span className="history-icon"><FileText size={22} /></span>
                 <div className="history-copy">
-                  <div><span>{item.date}</span><Badge type="sincronizado" /></div>
-                  <h2>{item.place}</h2>
-                  <p>{item.refs} refs · {item.time} min · {item.corrections} correcciones</p>
+                  <div><span>{new Date(item.fin).toLocaleString('es-CO')}</span><Badge type="sincronizado" /></div>
+                  <h2>{WAREHOUSE_LABELS[item.bodega] || item.bodega}</h2>
+                  <p>{item.contadas} refs · {item.tiempo_min} min · {item.corregidos} correcciones</p>
                 </div>
-                <Button variant="ghost" icon={Download} onClick={() => notify('Reporte regenerado y listo para descargar.')}>
-                  Re-generar
-                </Button>
+                <div className="history-card-actions">
+                  <Button
+                    variant="ghost"
+                    icon={Download}
+                    disabled={openingId === item.sesion_id}
+                    onClick={(event) => { event.stopPropagation(); abrirReporte(item.sesion_id) }}
+                  >
+                    {openingId === item.sesion_id ? 'Abriendo…' : 'Abrir PDF'}
+                  </Button>
+                  <button
+                    type="button"
+                    className="history-card-delete"
+                    aria-label="Borrar archivos generados de esta toma"
+                    disabled={deletingId === item.sesion_id}
+                    onClick={(event) => { event.stopPropagation(); borrarReporte(item.sesion_id) }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </article>
             ))}
           </div>
@@ -136,6 +240,33 @@ export default function Perfil({ onHome, onSignOut }) {
                     {savingFirma ? 'Guardando…' : 'Guardar firma'}
                   </Button>
                   <Button variant="secondary" onClick={() => setEditingFirma(false)}>Cancelar</Button>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="profile-signature-card">
+            <span className="eyebrow"><ScanFace size={14} /> Reconocimiento facial</span>
+            {!enrolandoRostro ? (
+              <>
+                <p className="profile-signature-empty">
+                  {rostroEnrolado
+                    ? 'Tu rostro está enrolado en este dispositivo. Vuelve a capturarlo si cambia mucho tu apariencia.'
+                    : 'Aún no enrolas tu rostro en este dispositivo. El reconocimiento facial es 100% local: la foto nunca se envía al servidor.'}
+                </p>
+                <Button variant="secondary" icon={ScanFace} onClick={() => setEnrolandoRostro(true)}>
+                  {rostroEnrolado ? 'Volver a enrolar' : 'Enrolar rostro en este dispositivo'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className={`camera-frame camera-${cameraState}`} aria-label="Captura de rostro">
+                  <video ref={videoRef} autoPlay muted playsInline aria-label="Video de la cámara frontal" />
+                </div>
+                <div className="profile-signature-actions">
+                  <Button onClick={enrolarRostro} disabled={capturandoRostro || cameraState !== 'live'}>
+                    {capturandoRostro ? 'Leyendo tu rostro…' : 'Capturar rostro'}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setEnrolandoRostro(false)}>Cancelar</Button>
                 </div>
               </>
             )}

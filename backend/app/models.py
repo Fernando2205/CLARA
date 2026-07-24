@@ -97,6 +97,15 @@ class SessionCreated(BaseModel):
     total_referencias: int
 
 
+class SessionHistoryItem(BaseModel):
+    sesion_id: str
+    bodega: str
+    fin: str
+    contadas: int
+    tiempo_min: float
+    corregidos: int
+
+
 class RecordCreate(BaseModel):
     articulo_id: int
     cantidad_fisica: float
@@ -213,12 +222,6 @@ class UsuarioOut(BaseModel):
 class RegisterResponse(BaseModel):
     ok: bool = True
     usuario: UsuarioOut
-
-
-class FaceLoginResult(BaseModel):
-    resultado: Literal["confirmado", "ambiguo", "sin_coincidencia"]
-    usuario: UsuarioOut | None = None
-    similitud: float = 0
 
 
 class CredentialsLoginRequest(BaseModel):

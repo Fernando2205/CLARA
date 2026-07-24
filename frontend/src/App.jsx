@@ -9,8 +9,19 @@ import Captura from './screens/Captura'
 import ResumenFirma from './screens/ResumenFirma'
 import ReporteEnvio from './screens/ReporteEnvio'
 import Perfil from './screens/Perfil'
+import { LogIn } from 'lucide-react'
+import { Button, Logo } from './components/ui'
 import { useAuthStore } from './stores/auth'
 import { useSessionStore } from './stores/session'
+
+function SignOutSplash({ onLogin }) {
+  return (
+    <div className="signout-splash">
+      <Logo light />
+      <Button variant="secondary" icon={LogIn} onClick={onLogin}>Iniciar sesión</Button>
+    </div>
+  )
+}
 
 const screens = ['identificacion', 'registro', 'bodega', 'mapa', 'preconteo', 'captura', 'resumen', 'reporte', 'perfil']
 
@@ -18,6 +29,7 @@ export default function App() {
   const [screen, setScreen] = useState('identificacion')
   const [previous, setPrevious] = useState('bodega')
   const [autoStartVoice, setAutoStartVoice] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
   const signOut = useAuthStore((state) => state.logout)
   const reset = useSessionStore((state) => state.reset)
 
@@ -57,9 +69,18 @@ export default function App() {
   }
 
   const handleSignOut = () => {
+    // signingOut reemplaza la pantalla de Perfil en el mismo render en que
+    // se limpia el usuario, para que nunca quede montada leyendo `user` nulo.
+    // Se queda en esta pantalla hasta que el usuario pida iniciar sesión.
+    setSigningOut(true)
     signOut()
     reset()
-    go('identificacion', 'back')
+  }
+
+  const goToLogin = () => {
+    setScreen('identificacion')
+    setPrevious('bodega')
+    setSigningOut(false)
   }
 
   return (
@@ -67,33 +88,34 @@ export default function App() {
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <div id="main-content">
         <div className="app-stage" data-screen={screen} key={screen}>
-          {screen === 'identificacion' && (
+          {signingOut && <SignOutSplash onLogin={goToLogin} />}
+          {!signingOut && screen === 'identificacion' && (
             <Identificacion onContinue={() => go('bodega')} onRegister={() => go('registro')} />
           )}
-          {screen === 'registro' && (
+          {!signingOut && screen === 'registro' && (
             <Registro
               onDone={() => go('bodega')}
               onBack={() => go('identificacion', 'back')}
             />
           )}
-          {screen === 'bodega' && (
+          {!signingOut && screen === 'bodega' && (
             <SeleccionBodega
               onContinue={() => go('preconteo')}
               onMap={() => go('mapa')}
               onProfile={openProfile}
             />
           )}
-          {screen === 'mapa' && (
+          {!signingOut && screen === 'mapa' && (
             <MapaBodega onBack={() => go('bodega', 'back')} onProfile={openProfile} />
           )}
-          {screen === 'preconteo' && (
+          {!signingOut && screen === 'preconteo' && (
             <PreConteo
               onBack={() => go('bodega', 'back')}
               onProfile={openProfile}
               onStart={() => { setAutoStartVoice(true); go('captura') }}
             />
           )}
-          {screen === 'captura' && (
+          {!signingOut && screen === 'captura' && (
             <Captura
               onClose={() => go('resumen')}
               onReport={() => go('reporte')}
@@ -103,21 +125,21 @@ export default function App() {
               onAutoStartHandled={() => setAutoStartVoice(false)}
             />
           )}
-          {screen === 'resumen' && (
+          {!signingOut && screen === 'resumen' && (
             <ResumenFirma
               onBack={() => go('captura', 'back')}
               onContinue={() => go('reporte')}
               onProfile={openProfile}
             />
           )}
-          {screen === 'reporte' && (
+          {!signingOut && screen === 'reporte' && (
             <ReporteEnvio
               onBack={() => go('resumen', 'back')}
               onProfile={openProfile}
               onFinish={() => go('perfil')}
             />
           )}
-          {screen === 'perfil' && (
+          {!signingOut && screen === 'perfil' && (
             <Perfil
               onHome={() => go(previous === 'perfil' ? 'bodega' : previous, 'back')}
               onSignOut={handleSignOut}

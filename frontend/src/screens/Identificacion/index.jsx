@@ -3,10 +3,15 @@ import { KeyRound, ScanFace, UserPlus } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { Button, Logo, PinPad } from '../../components/ui'
 import { useCamera } from '../../lib/useCamera'
-import { credentialsLogin, faceLogin, toStoreUser } from '../../lib/api'
+import { identify } from '../../lib/facial'
+import { credentialsLogin, toStoreUser } from '../../lib/api'
 
-const MAX_ATTEMPTS = 4
-const ATTEMPT_INTERVAL_MS = 1800
+// Regla del §7.2: dos fallos consecutivos de reconocimiento O 5s sin
+// detectar ningún rostro en cámara → el teclado PIN aparece solo. El demo
+// nunca se queda esperando la cámara indefinidamente.
+const MAX_CONSECUTIVE_FAILURES = 2
+const NO_FACE_TIMEOUT_MS = 5000
+const ATTEMPT_INTERVAL_MS = 900
 
 export default function Identificacion({ onContinue, onRegister }) {
   const [stage, setStage] = useState('face')
@@ -15,37 +20,52 @@ export default function Identificacion({ onContinue, onRegister }) {
   const [pin, setPin] = useState('')
   const [credencialesError, setCredencialesError] = useState('')
   const [verificando, setVerificando] = useState(false)
-  const attemptsRef = useRef(0)
+  const failuresRef = useRef(0)
+  const noFaceSinceRef = useRef(null)
   const busyRef = useRef(false)
   const login = useAuthStore((state) => state.login)
-  const { videoRef, cameraState, captureFrame } = useCamera(stage === 'face')
+  const { videoRef, cameraState } = useCamera(stage === 'face')
 
   useEffect(() => {
     if (stage !== 'face' || cameraState !== 'live') return undefined
 
     let cancelled = false
+    failuresRef.current = 0
+    noFaceSinceRef.current = null
+
     const attempt = async () => {
       if (busyRef.current || cancelled) return
       busyRef.current = true
       try {
-        const blob = await captureFrame()
-        const result = await faceLogin(blob)
+        const result = await identify(videoRef.current)
         if (cancelled) return
-        if (result.resultado === 'confirmado') {
+
+        if (result.status === 'matched') {
           setStatusText('¡Listo! Te reconocimos.')
           login(toStoreUser(result.usuario))
           onContinue()
           return
         }
-        attemptsRef.current += 1
-        if (attemptsRef.current >= MAX_ATTEMPTS) {
-          setStage('credenciales')
+
+        if (result.status === 'no_face') {
+          if (noFaceSinceRef.current === null) noFaceSinceRef.current = Date.now()
+          if (Date.now() - noFaceSinceRef.current >= NO_FACE_TIMEOUT_MS) {
+            setStage('credenciales')
+            return
+          }
+          setStatusText('No vemos tu rostro, acércate a la cámara…')
         } else {
+          noFaceSinceRef.current = null
+          failuresRef.current += 1
+          if (failuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+            setStage('credenciales')
+            return
+          }
           setStatusText('No logramos confirmarte, intentando de nuevo…')
         }
       } catch {
-        attemptsRef.current += 1
-        if (attemptsRef.current >= MAX_ATTEMPTS) {
+        failuresRef.current += 1
+        if (failuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
           setStage('credenciales')
         }
       } finally {
@@ -130,7 +150,7 @@ export default function Identificacion({ onContinue, onRegister }) {
             <button className="link-button" onClick={onRegister}>
               <UserPlus size={16} /> ¿Nuevo aquí? Regístrate
             </button>
-            <button className="link-button" onClick={() => { attemptsRef.current = 0; setStage('face') }}>
+            <button className="link-button" onClick={() => { failuresRef.current = 0; setStage('face') }}>
               Volver al reconocimiento facial
             </button>
           </div>

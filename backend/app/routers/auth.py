@@ -3,18 +3,11 @@ from __future__ import annotations
 import re
 import sqlite3
 
-import numpy as np
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from ..config import get_settings
 from ..db import get_db
-from ..models import (
-    CredentialsLoginRequest,
-    FaceLoginResult,
-    RegisterResponse,
-    UsuarioOut,
-)
-from ..services import face
+from ..models import CredentialsLoginRequest, RegisterResponse, UsuarioOut
 from ..services.credentials import password_hash, verify_credentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -38,23 +31,6 @@ def to_usuario_out(row: sqlite3.Row) -> UsuarioOut:
     )
 
 
-def _enrolled_embeddings(connection: sqlite3.Connection) -> list[tuple[int, np.ndarray]]:
-    rows = connection.execute(
-        "SELECT id, face_embedding FROM usuarios WHERE face_embedding IS NOT NULL"
-    ).fetchall()
-    return [(row["id"], face.blob_to_embedding(row["face_embedding"])) for row in rows]
-
-
-async def _read_embedding(foto: UploadFile) -> np.ndarray:
-    image_bytes = await foto.read()
-    try:
-        return face.extract_embedding(image_bytes)
-    except face.NoFaceDetectedError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except face.MultipleFacesDetectedError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-
 async def _save_firma(usuario_id: int, firma: UploadFile) -> None:
     data = await firma.read()
     if not data:
@@ -68,7 +44,6 @@ async def register(
     cedula: str = Form(...),
     correo: str = Form(...),
     pin: str = Form(...),
-    foto: UploadFile = File(...),
     firma: UploadFile = File(...),
     connection: sqlite3.Connection = Depends(get_db),
 ) -> RegisterResponse:
@@ -89,27 +64,16 @@ async def register(
             status_code=409, detail="Ya existe una cuenta con esa cédula o correo"
         )
 
-    embedding = await _read_embedding(foto)
     firma_bytes = await firma.read()
     if not firma_bytes:
         raise HTTPException(status_code=422, detail="Debes dibujar tu firma antes de registrarte")
 
-    match = face.find_best_match(embedding, _enrolled_embeddings(connection))
-    if match is not None and match[1] >= face.MATCH_THRESHOLD:
-        raise HTTPException(
-            status_code=409, detail="Este rostro ya está registrado en otra cuenta"
-        )
-
     cursor = connection.execute(
         """
-        INSERT INTO usuarios
-            (nombre, cargo, cedula, correo, password_hash, face_embedding, face_embedding_model)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO usuarios (nombre, cargo, cedula, correo, password_hash)
+        VALUES (?, ?, ?, ?, ?)
         """,
-        (
-            nombre, "Colaborador", cedula, correo, password_hash(pin),
-            face.embedding_to_blob(embedding), face.EMBEDDING_MODEL,
-        ),
+        (nombre, "Colaborador", cedula, correo, password_hash(pin)),
     )
     connection.commit()
     usuario_id = cursor.lastrowid
@@ -134,30 +98,6 @@ async def guardar_firma(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     await _save_firma(usuario_id, firma)
     return to_usuario_out(row)
-
-
-@router.post("/face-login", response_model=FaceLoginResult)
-async def face_login(
-    foto: UploadFile = File(...),
-    connection: sqlite3.Connection = Depends(get_db),
-) -> FaceLoginResult:
-    embedding = await _read_embedding(foto)
-
-    match = face.find_best_match(embedding, _enrolled_embeddings(connection))
-    if match is None:
-        return FaceLoginResult(resultado="sin_coincidencia")
-
-    usuario_id, similarity = match
-    if similarity >= face.MATCH_THRESHOLD:
-        row = connection.execute(
-            "SELECT * FROM usuarios WHERE id = ?", (usuario_id,)
-        ).fetchone()
-        return FaceLoginResult(
-            resultado="confirmado", usuario=to_usuario_out(row), similitud=similarity
-        )
-    if similarity >= face.AMBIGUOUS_THRESHOLD:
-        return FaceLoginResult(resultado="ambiguo", similitud=similarity)
-    return FaceLoginResult(resultado="sin_coincidencia", similitud=similarity)
 
 
 @router.post("/login", response_model=UsuarioOut)

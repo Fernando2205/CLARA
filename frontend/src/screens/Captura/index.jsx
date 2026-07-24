@@ -13,7 +13,7 @@ import InventoryDrawer from '../../components/InventoryDrawer'
 import RegistroCard from '../../components/RegistroCard'
 import SessionPanel from '../../components/SessionPanel'
 import { Avatar, Button, MicButton, Tangram, Toast, TopBar } from '../../components/ui'
-import { askClara, createSession, saveInventoryRecord } from '../../lib/api'
+import { askClara, createSession } from '../../lib/api'
 import { parseInventoryPhrase, validateInventoryRecord } from '../../lib/parser'
 import { listenOnce, speakNatural, stopSpeaking } from '../../lib/voice'
 import { useAuthStore } from '../../stores/auth'
@@ -492,17 +492,14 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     const duplicateAlert = pending.alerts.find((alert) => alert.rule === 'V5')
 
     if (pending.isCorrection) {
-      updateRecord(pending.id, { quantity, resolvedAlertCount })
-      if (online && sessionId && pending.articleId) {
-        saveInventoryRecord(sessionId, {
-          articulo_id: pending.articleId,
-          cantidad_fisica: Number(quantity),
-          unidad: pending.catalogUnit,
-          estado_producto: pending.state,
-          confianza: pending.confidence,
-          alertas: [],
-        }).catch(() => showToast('Corrección guardada local; se sincronizará cuando vuelva el backend.'))
-      }
+      updateRecord(pending.id, { quantity, resolvedAlertCount }, sessionId && pending.articleId ? {
+        articulo_id: pending.articleId,
+        cantidad_fisica: Number(quantity),
+        unidad: pending.catalogUnit,
+        estado_producto: pending.state,
+        confianza: pending.confidence,
+        alertas: [],
+      } : null)
       const visibleMessage = `Corrección guardada · ${pending.name} · ${quantity} ${pending.unit}`
       const spokenMessage = `Actualicé ${pending.name.toLowerCase()} a ${quantity} ${pending.unit}.`
       appendMessage('assistant', visibleMessage, 'CLARA · actualizado')
@@ -515,17 +512,14 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     if (duplicateAlert && duplicateAction) {
       const previous = records.find((record) => record.id === duplicateAlert.duplicateId)
       const nextQuantity = duplicateAction === 'sum' ? Number(previous.quantity) + Number(quantity) : quantity
-      updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount })
-      if (online && sessionId && pending.articleId) {
-        saveInventoryRecord(sessionId, {
-          articulo_id: pending.articleId,
-          cantidad_fisica: Number(nextQuantity),
-          unidad: pending.catalogUnit,
-          estado_producto: pending.state,
-          confianza: pending.confidence,
-          alertas: [],
-        }).catch(() => showToast('Guardado local; se sincronizará cuando vuelva el backend.'))
-      }
+      updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount }, sessionId && pending.articleId ? {
+        articulo_id: pending.articleId,
+        cantidad_fisica: Number(nextQuantity),
+        unidad: pending.catalogUnit,
+        estado_producto: pending.state,
+        confianza: pending.confidence,
+        alertas: [],
+      } : null)
       const visibleMessage = `${duplicateAction === 'sum' ? 'Conteos sumados' : 'Conteo reemplazado'} · ${pending.name} · ${nextQuantity} ${pending.unit}`
       const spokenMessage = duplicateAction === 'sum'
         ? `${pending.name} queda en ${nextQuantity} ${pending.unit}, sumando ambos conteos.`
@@ -549,20 +543,14 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
       state: pending.state,
       confidence: pending.confidence,
       resolvedAlertCount,
-    })
-    if (online && sessionId && pending.articleId) {
-      saveInventoryRecord(sessionId, {
-        articulo_id: pending.articleId,
-        cantidad_fisica: Number(quantity),
-        unidad: pending.catalogUnit,
-        estado_producto: pending.state,
-        confianza: pending.confidence,
-        alertas: pending.alerts,
-      }).catch(() => {
-        setSessionId(null)
-        showToast('Guardado local; se sincronizará cuando vuelva el backend.')
-      })
-    }
+    }, sessionId && pending.articleId ? {
+      articulo_id: pending.articleId,
+      cantidad_fisica: Number(quantity),
+      unidad: pending.catalogUnit,
+      estado_producto: pending.state,
+      confianza: pending.confidence,
+      alertas: pending.alerts,
+    } : null)
     const visibleMessage = `Guardado · ${pending.name} · ${quantity} ${pending.unit}`
     const spokenMessage = `Guardé ${quantity} ${pending.unit} de ${pending.name.toLowerCase()}.`
     appendMessage('assistant', visibleMessage, online ? 'CLARA · sincronizado' : 'CLARA · guardado local')

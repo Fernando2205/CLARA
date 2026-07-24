@@ -79,9 +79,6 @@ def connect() -> sqlite3.Connection:
 USUARIOS_NEW_COLUMNS = {
     "cedula": "TEXT",
     "correo": "TEXT",
-    "face_embedding": "BLOB",
-    "face_embedding_model": "TEXT",
-    "firma_path": "TEXT",
 }
 
 

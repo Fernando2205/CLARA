@@ -30,6 +30,7 @@ export default function ResumenFirma({ onBack, onContinue, onProfile }) {
   const [signing, setSigning] = useState(false)
   const [signError, setSignError] = useState('')
   const [signed, setSigned] = useState(null)
+  const [firmaStamped, setFirmaStamped] = useState(false)
   const [toast, setToast] = useState('')
   const [needsFirma, setNeedsFirma] = useState(!user.firma)
   const [savingFirma, setSavingFirma] = useState(false)
@@ -78,6 +79,7 @@ export default function ResumenFirma({ onBack, onContinue, onProfile }) {
     setSignError('')
     try {
       const result = await signSession(sessionId, { usuario: user.nombre, password: pin })
+      setFirmaStamped(false)
       setSigned(result)
       setSignature(result)
       notify('Toma firmada. El acta quedó sellada y ya no puede modificarse.')
@@ -203,6 +205,16 @@ export default function ResumenFirma({ onBack, onContinue, onProfile }) {
               <div className="signed-check"><Check size={44} /></div>
               <span className="eyebrow">Firma verificada</span>
               <h2>Toma firmada</h2>
+              {user.firma && (
+                <img
+                  className={`firma-stamp signature-stamp-large ${firmaStamped ? 'firma-stamp-settled' : 'firma-stamp-animating'}`}
+                  src={user.firma}
+                  alt="Firma del responsable"
+                  onAnimationEnd={(event) => {
+                    if (event.animationName === 'firma-trazo') setFirmaStamped(true)
+                  }}
+                />
+              )}
               <p>{summary.contadas} referencias en {summary.tiempo_min} min, {summary.corregidos} correcciones a tiempo.</p>
               <div className="signature-receipt">
                 <span>Responsable</span><strong>{user.nombre}</strong>

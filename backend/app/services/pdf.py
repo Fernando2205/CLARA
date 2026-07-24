@@ -9,6 +9,8 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 
+from ..config import get_settings
+
 SIN_CONTAR = "Sin contar"
 
 
@@ -45,7 +47,7 @@ def report_data(
 ) -> tuple[sqlite3.Row, list]:
     session = connection.execute(
         """
-        SELECT s.*, u.nombre, u.cargo, u.firma_path FROM sesiones s
+        SELECT s.*, u.nombre, u.cargo FROM sesiones s
         JOIN usuarios u ON u.id = s.usuario_id
         WHERE s.id = ?
         """,
@@ -163,9 +165,11 @@ def generate_pdf(path: Path, session: sqlite3.Row, records: list) -> None:
 
     # Solo se estampa la firma real si la sesión quedó formalmente firmada
     # (hash_firma presente); un acta sin firmar no debe mostrar la firma personal.
+    # El archivo vive en firma_dir/{usuario_id}.png (ver routers/auth.py:firma_path_for);
+    # no hay columna de BD para esto, se deriva del id del responsable de la sesión.
     firma_path = (
-        Path(session["firma_path"])
-        if session["firma_path"] and session["hash_firma"]
+        get_settings().firma_dir / f"{session['usuario_id']}.png"
+        if session["hash_firma"]
         else None
     )
     firma_img_html = ""

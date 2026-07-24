@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/auth'
 import { Button, Logo, PinPad } from '../../components/ui'
 import { SignatureField } from '../../components/SignaturePad'
 import { useCamera } from '../../lib/useCamera'
+import { captureDescriptor, saveToGallery } from '../../lib/facial'
 import { registerUser, toStoreUser } from '../../lib/api'
 
 export default function Registro({ onDone, onBack }) {
@@ -11,24 +12,32 @@ export default function Registro({ onDone, onBack }) {
   const [cedula, setCedula] = useState('')
   const [correo, setCorreo] = useState('')
   const [pin, setPin] = useState('')
-  const [foto, setFoto] = useState(null)
+  const [rostroListo, setRostroListo] = useState(false)
+  const [enrolando, setEnrolando] = useState(false)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
   const login = useAuthStore((state) => state.login)
-  const { videoRef, cameraState, captureFrame } = useCamera(true)
+  const { videoRef, cameraState } = useCamera(true)
   const firmaRef = useRef(null)
+  // El descriptor facial se calcula en el dispositivo (lib/facial.js) y solo
+  // se persiste en localStorage tras crear la cuenta; ninguna imagen de
+  // rostro viaja al backend.
+  const descriptorRef = useRef(null)
 
-  const tomarFoto = async () => {
+  const capturarRostro = async () => {
     setError('')
+    setEnrolando(true)
     try {
-      const blob = await captureFrame()
-      setFoto(blob)
-    } catch {
-      setError('No pudimos tomar la foto. Verifica el permiso de cámara.')
+      descriptorRef.current = await captureDescriptor(videoRef.current)
+      setRostroListo(true)
+    } catch (err) {
+      setError(err.message || 'No pudimos leer tu rostro. Verifica el permiso de cámara e inténtalo de nuevo.')
+    } finally {
+      setEnrolando(false)
     }
   }
 
-  const listo = nombre.trim() && cedula.trim() && correo.trim() && pin.length === 4 && foto
+  const listo = nombre.trim() && cedula.trim() && correo.trim() && pin.length === 4 && rostroListo
 
   const submit = async (event) => {
     event.preventDefault()
@@ -46,9 +55,9 @@ export default function Registro({ onDone, onBack }) {
         cedula: cedula.trim(),
         correo: correo.trim(),
         pin,
-        foto,
         firma,
       })
+      saveToGallery(descriptorRef.current, usuario)
       login(toStoreUser(usuario))
       onDone()
     } catch (err) {
@@ -92,10 +101,10 @@ export default function Registro({ onDone, onBack }) {
             <div className={`camera-frame camera-${cameraState}`} aria-label="Captura de rostro para registro">
               <video ref={videoRef} autoPlay muted playsInline aria-label="Video de la cámara frontal" />
             </div>
-            <Button type="button" variant="secondary" icon={Camera} onClick={tomarFoto}>
-              {foto ? 'Tomar otra foto' : 'Tomar foto'}
+            <Button type="button" variant="secondary" icon={Camera} onClick={capturarRostro} disabled={enrolando}>
+              {enrolando ? 'Leyendo tu rostro…' : rostroListo ? 'Capturar de nuevo' : 'Capturar rostro'}
             </Button>
-            {foto && <p className="register-photo-ok">Foto lista ✓</p>}
+            {rostroListo && <p className="register-photo-ok">Rostro listo ✓ (se guarda solo en este dispositivo)</p>}
           </div>
 
           <div className="register-signature">
