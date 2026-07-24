@@ -10,6 +10,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 
 from ..db import get_db
 from ..models import RecordCreate, RecordUpdate, SessionCreate, SessionCreated, SignRequest
+from ..services.credentials import verify_credentials
 
 router = APIRouter(prefix="/sessions", tags=["sesiones"])
 
@@ -131,14 +132,8 @@ def sign_session(
 ) -> dict:
     session = get_session(connection, session_id)
     ensure_mutable(session)
-    user = connection.execute(
-        "SELECT * FROM usuarios WHERE id = ?", (session["usuario_id"],)
-    ).fetchone()
-    candidate_hash = hashlib.sha256(request.password.encode("utf-8")).hexdigest()
-    matches_name = request.usuario.strip().casefold() in {
-        user["nombre"].casefold(), str(user["id"]), (user["pin"] or "").casefold()
-    }
-    if not matches_name or candidate_hash != user["password_hash"]:
+    user = verify_credentials(connection, request.usuario, request.password)
+    if not user or user["id"] != session["usuario_id"]:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     records = connection.execute(
         """

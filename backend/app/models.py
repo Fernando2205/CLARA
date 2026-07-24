@@ -198,3 +198,27 @@ class AssistantResponse(BaseModel):
 
 class SpeechRequest(BaseModel):
     texto: str = Field(min_length=1, max_length=900)
+
+
+class UsuarioOut(BaseModel):
+    id: int
+    nombre: str
+    cargo: str
+    bodega_asignada: str | None = None
+    turno: str | None = None
+
+
+class RegisterResponse(BaseModel):
+    ok: bool = True
+    usuario: UsuarioOut
+
+
+class FaceLoginResult(BaseModel):
+    resultado: Literal["confirmado", "ambiguo", "sin_coincidencia"]
+    usuario: UsuarioOut | None = None
+    similitud: float = 0
+
+
+class CredentialsLoginRequest(BaseModel):
+    usuario: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=4, max_length=4)

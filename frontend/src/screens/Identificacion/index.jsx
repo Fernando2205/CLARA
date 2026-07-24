@@ -1,75 +1,81 @@
 import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, Delete, ScanFace, UserRoundX } from 'lucide-react'
-import referenceMockup from '../../../../docs/disenos/P0_facial.png'
+import { KeyRound, ScanFace, UserPlus } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
-import { Avatar, Button, Logo } from '../../components/ui'
+import { Button, Logo, PinPad } from '../../components/ui'
+import { useCamera } from '../../lib/useCamera'
+import { credentialsLogin, faceLogin, toStoreUser } from '../../lib/api'
 
-export default function Identificacion({ onContinue }) {
+const MAX_ATTEMPTS = 4
+const ATTEMPT_INTERVAL_MS = 1800
+
+export default function Identificacion({ onContinue, onRegister }) {
   const [stage, setStage] = useState('face')
+  const [statusText, setStatusText] = useState('Buscando tu rostro…')
+  const [identidad, setIdentidad] = useState('')
   const [pin, setPin] = useState('')
-  const [cameraState, setCameraState] = useState('fallback')
-  const videoRef = useRef(null)
-  const streamRef = useRef(null)
-  const authenticate = useAuthStore((state) => state.authenticate)
-  const user = useAuthStore((state) => state.user)
+  const [credencialesError, setCredencialesError] = useState('')
+  const [verificando, setVerificando] = useState(false)
+  const attemptsRef = useRef(0)
+  const busyRef = useRef(false)
+  const login = useAuthStore((state) => state.login)
+  const { videoRef, cameraState, captureFrame } = useCamera(stage === 'face')
 
   useEffect(() => {
-    if (stage !== 'face') return undefined
+    if (stage !== 'face' || cameraState !== 'live') return undefined
 
-    let active = true
-    const startCamera = async () => {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraState('fallback')
-        return
-      }
-
+    let cancelled = false
+    const attempt = async () => {
+      if (busyRef.current || cancelled) return
+      busyRef.current = true
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
-          audio: false,
-        })
-        if (!active) {
-          stream.getTracks().forEach((track) => track.stop())
+        const blob = await captureFrame()
+        const result = await faceLogin(blob)
+        if (cancelled) return
+        if (result.resultado === 'confirmado') {
+          setStatusText('¡Listo! Te reconocimos.')
+          login(toStoreUser(result.usuario))
+          onContinue()
           return
         }
-        streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-          setCameraState('live')
+        attemptsRef.current += 1
+        if (attemptsRef.current >= MAX_ATTEMPTS) {
+          setStage('credenciales')
+        } else {
+          setStatusText('No logramos confirmarte, intentando de nuevo…')
         }
       } catch {
-        setCameraState('fallback')
+        attemptsRef.current += 1
+        if (attemptsRef.current >= MAX_ATTEMPTS) {
+          setStage('credenciales')
+        }
+      } finally {
+        busyRef.current = false
       }
     }
 
-    startCamera()
+    const interval = window.setInterval(attempt, ATTEMPT_INTERVAL_MS)
+    attempt()
     return () => {
-      active = false
-      streamRef.current?.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
+      cancelled = true
+      window.clearInterval(interval)
     }
-  }, [stage])
+  }, [stage, cameraState])
 
-  const finishAuthentication = () => {
-    authenticate()
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    onContinue()
-  }
-
-  const confirmPin = (nextPin) => {
-    if (nextPin === '1234') {
-      finishAuthentication()
-    } else if (nextPin.length === 4) {
+  const submitCredentials = async (event) => {
+    event.preventDefault()
+    if (!identidad.trim() || pin.length !== 4) return
+    setVerificando(true)
+    setCredencialesError('')
+    try {
+      const usuario = await credentialsLogin({ usuario: identidad.trim(), password: pin })
+      login(toStoreUser(usuario))
+      onContinue()
+    } catch {
+      setCredencialesError('Credenciales inválidas. Verifica tu cédula/nombre y PIN.')
       setPin('')
+    } finally {
+      setVerificando(false)
     }
-  }
-
-  const press = (digit) => {
-    if (pin.length >= 4) return
-    const nextPin = `${pin}${digit}`
-    setPin(nextPin)
-    window.setTimeout(() => confirmPin(nextPin), 120)
   }
 
   return (
@@ -80,66 +86,53 @@ export default function Identificacion({ onContinue }) {
         {stage === 'face' ? (
           <div className="face-stage">
             <div className={`camera-frame camera-${cameraState}`} aria-label="Vista de reconocimiento facial">
-              <div
-                className="camera-reference"
-                style={{ backgroundImage: `url(${referenceMockup})` }}
-                aria-hidden="true"
-              />
               <video ref={videoRef} autoPlay muted playsInline aria-label="Video de la cámara frontal" />
               <span className="scan-line" />
             </div>
 
             <div className="face-status" role="status" aria-live="polite">
               <ScanFace size={19} />
-              <span>Buscando tu rostro…</span>
+              <span>{cameraState === 'live' ? statusText : 'Activa tu cámara para reconocerte'}</span>
             </div>
-
-            <article className="recognition-card">
-              <Avatar initials="S" size="lg" />
-              <div>
-                <h1>Hola, {user.nombreCorto}</h1>
-                <p>{user.cargo} · Bodega Refrigerados · {user.turno}</p>
-              </div>
-            </article>
 
             <div className="face-actions">
-              <Button icon={CheckCircle2} onClick={finishAuthentication}>Confirmar</Button>
-              <Button variant="secondary" icon={UserRoundX} onClick={() => setStage('pin')}>No soy yo</Button>
+              <Button variant="secondary" icon={KeyRound} onClick={() => setStage('credenciales')}>
+                Usar credenciales
+              </Button>
+              <button className="link-button pin-entry-link" onClick={onRegister}>
+                <UserPlus size={16} /> ¿Nuevo aquí? Regístrate
+              </button>
             </div>
-
-            <button className="link-button pin-entry-link" onClick={() => setStage('pin')}>
-              <span aria-hidden="true">•••</span> Entrar con PIN
-            </button>
           </div>
         ) : (
           <div className="pin-stage">
             <div className="pin-heading">
               <span>Acceso alternativo</span>
-              <h1>Ingresa tu PIN</h1>
-              <p>Usa tu clave de cuatro dígitos para continuar.</p>
+              <h1>Ingresa tus credenciales</h1>
+              <p>Escribe tu cédula o nombre y tu PIN de cuatro dígitos.</p>
             </div>
-            <div className="pin-profile">
-              <Avatar />
-              <div>
-                <strong>{user.nombre}</strong>
-                <span>{user.cargo} · {user.turno}</span>
-              </div>
-            </div>
-            <div className="pin-dots" aria-label={`${pin.length} de 4 dígitos`}>
-              {[0, 1, 2, 3].map((dot) => <span className={pin.length > dot ? 'filled' : ''} key={dot} />)}
-            </div>
-            <div className="pin-grid">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-                <button key={digit} onClick={() => press(digit)}>{digit}</button>
-              ))}
-              <span />
-              <button onClick={() => press(0)}>0</button>
-              <button aria-label="Borrar último dígito" onClick={() => setPin((value) => value.slice(0, -1))}>
-                <Delete size={24} />
-              </button>
-            </div>
-            <p className="pin-hint">PIN de demostración: 1234</p>
-            <button className="link-button" onClick={() => setStage('face')}>Volver al reconocimiento facial</button>
+            <form className="credentials-form" onSubmit={submitCredentials}>
+              <label className="credentials-field">
+                <span>Cédula o nombre</span>
+                <input
+                  value={identidad}
+                  onChange={(event) => setIdentidad(event.target.value)}
+                  autoComplete="username"
+                  autoFocus
+                />
+              </label>
+              <PinPad value={pin} onChange={setPin} />
+              {credencialesError && <p className="credentials-error">{credencialesError}</p>}
+              <Button type="submit" disabled={!identidad.trim() || pin.length !== 4 || verificando}>
+                {verificando ? 'Verificando…' : 'Entrar'}
+              </Button>
+            </form>
+            <button className="link-button" onClick={onRegister}>
+              <UserPlus size={16} /> ¿Nuevo aquí? Regístrate
+            </button>
+            <button className="link-button" onClick={() => { attemptsRef.current = 0; setStage('face') }}>
+              Volver al reconocimiento facial
+            </button>
           </div>
         )}
       </section>

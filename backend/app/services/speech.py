@@ -6,12 +6,12 @@ import re
 import unicodedata
 from collections.abc import AsyncIterator
 
-from openai import AsyncOpenAI
+import httpx
 
 from ..config import get_settings
 
 
-VOICE_CACHE_VERSION = "v4-natural-tts"
+VOICE_CACHE_VERSION = "v5-elevenlabs"
 FORBIDDEN_PREAMBLES = (
     "claro",
     "por supuesto",
@@ -20,12 +20,7 @@ FORBIDDEN_PREAMBLES = (
     "el mensaje dice",
     "voy a leer",
 )
-VOICE_INSTRUCTIONS = """Eres la voz de CLARA, asistente de inventarios de cocina.
-Habla en español colombiano neutro, con una voz cálida, cercana y profesional.
-Usa un ritmo ágil y conversacional, con pausas naturales muy breves. Pronuncia
-cantidades, productos y unidades con claridad. Evita sonar como una locución,
-un sistema automático o una lectura literal. Empieza directamente con la primera
-palabra del texto y no agregues, quites ni cambies información."""
+ELEVENLABS_STREAM_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
 
 
 def _normalize(text: str) -> str:
@@ -60,14 +55,14 @@ def _cache_path(text: str, model: str, voice: str, root: Path) -> Path:
 
 async def open_speech_stream(text: str) -> tuple[AsyncIterator[bytes], bool]:
     settings = get_settings()
-    if not settings.openai_api_key:
-        raise RuntimeError("OpenAI no está configurado")
+    if not settings.elevenlabs_api_key or not settings.elevenlabs_voice_id:
+        raise RuntimeError("ElevenLabs no está configurado")
 
     settings.voice_cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = _cache_path(
         text,
-        settings.voice_model,
-        settings.voice_name,
+        settings.elevenlabs_model,
+        settings.elevenlabs_voice_id,
         settings.voice_cache_dir,
     )
     if cache_path.exists():
@@ -78,29 +73,45 @@ async def open_speech_stream(text: str) -> tuple[AsyncIterator[bytes], bool]:
 
         return cached_stream(), True
 
-    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=18, max_retries=1)
+    client = httpx.AsyncClient(timeout=18)
+    stream_context = client.stream(
+        "POST",
+        ELEVENLABS_STREAM_URL.format(voice_id=settings.elevenlabs_voice_id),
+        headers={
+            "xi-api-key": settings.elevenlabs_api_key,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+        },
+        json={
+            "text": text,
+            "model_id": settings.elevenlabs_model,
+            "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
+        },
+    )
     try:
-        stream_manager = client.audio.speech.with_streaming_response.create(
-            model=settings.voice_model,
-            voice=settings.voice_name,
-            input=text,
-            instructions=VOICE_INSTRUCTIONS,
-            response_format="mp3",
-            speed=1.0,
-        )
-        response = await stream_manager.__aenter__()
+        response = await stream_context.__aenter__()
+        if response.status_code >= 400:
+            detail = await response.aread()
+            raise RuntimeError(
+                f"ElevenLabs respondió {response.status_code}: {detail[:200].decode('utf-8', 'ignore')}"
+            )
     except Exception as error:
-        raise RuntimeError("OpenAI no pudo generar la voz natural") from error
+        await stream_context.__aexit__(type(error), error, error.__traceback__)
+        await client.aclose()
+        if isinstance(error, RuntimeError):
+            raise
+        raise RuntimeError("ElevenLabs no pudo generar la voz natural") from error
 
     async def live_stream() -> AsyncIterator[bytes]:
         chunks: list[bytes] = []
         try:
-            async for chunk in response.iter_bytes(chunk_size=8 * 1024):
+            async for chunk in response.aiter_bytes(8 * 1024):
                 if chunk:
                     chunks.append(chunk)
                     yield chunk
         finally:
-            await stream_manager.__aexit__(None, None, None)
+            await stream_context.__aexit__(None, None, None)
+            await client.aclose()
         if chunks:
             cache_path.write_bytes(b"".join(chunks))
 

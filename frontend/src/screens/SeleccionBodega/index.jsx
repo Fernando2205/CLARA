@@ -1,4 +1,4 @@
-import { ArrowRight, Boxes, Building2, Clock3, MapPin } from 'lucide-react'
+import { ArrowRight, Boxes, Building2, Clock3, Map, MapPin } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionStore } from '../../stores/session'
 import { Avatar, Button, Logo, Progress } from '../../components/ui'
@@ -13,20 +13,26 @@ const warehouses = [
     open: 47,
   },
   {
-    id: 'ALMACEN ALIMENTOS Y BEBIDAS',
+    id: 'STOCK ALMACEN AYB',
     label: 'Almacén · Alimentos y Bebidas',
-    refs: 286,
+    refs: 270,
     date: '28 jun',
   },
   {
-    id: 'STOCK KIOSCO TAQUILLA',
+    id: 'STOCK KIOSCO TAQUILLA AYB',
     label: 'Kiosco Taquilla · AyB',
-    refs: 149,
+    refs: 58,
     date: '26 jun',
+  },
+  {
+    id: 'STOCK KIOSCO PISCIGIROS AYB',
+    label: 'Kiosco Piscigiros · AyB',
+    refs: 56,
+    date: '24 jun',
   },
 ]
 
-export default function SeleccionBodega({ onContinue, onProfile }) {
+export default function SeleccionBodega({ onContinue, onMap, onProfile }) {
   const mode = useSessionStore((state) => state.mode)
   const setMode = useSessionStore((state) => state.setMode)
   const setBodega = useSessionStore((state) => state.setBodega)
@@ -92,7 +98,10 @@ export default function SeleccionBodega({ onContinue, onProfile }) {
             <strong>{mode === 'toma' ? 'Toma física' : 'Requisición'} · {warehouses.find((item) => item.id === selected)?.label}</strong>
             <span>La sesión se guarda automáticamente en este dispositivo.</span>
           </div>
-          <Button onClick={onContinue} icon={ArrowRight}>Comenzar conteo</Button>
+          <div className="warehouse-footer-actions">
+            <Button variant="secondary" onClick={onMap} icon={Map}>Ver mapa en vivo</Button>
+            <Button onClick={onContinue} icon={ArrowRight}>Comenzar conteo</Button>
+          </div>
         </div>
       </section>
     </main>

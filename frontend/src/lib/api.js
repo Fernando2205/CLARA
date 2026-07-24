@@ -22,6 +22,67 @@ async function apiFetch(path, options = {}, timeoutMs = 3000) {
   }
 }
 
+async function apiFetchForm(path, formData, timeoutMs = 8000) {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal,
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error(body.detail || `Error ${response.status}`)
+    }
+    return response.json()
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
+export function toStoreUser(usuario) {
+  const [primerNombre] = usuario.nombre.trim().split(/\s+/)
+  const iniciales = usuario.nombre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('')
+  return {
+    id: usuario.id,
+    nombre: usuario.nombre,
+    nombreCorto: primerNombre,
+    iniciales,
+    cargo: usuario.cargo,
+    turno: usuario.turno || '',
+    bodega: usuario.bodega_asignada || '',
+  }
+}
+
+export function registerUser({ nombre, cedula, correo, pin, foto }) {
+  const formData = new FormData()
+  formData.append('nombre', nombre)
+  formData.append('cedula', cedula)
+  formData.append('correo', correo)
+  formData.append('pin', pin)
+  formData.append('foto', foto, 'rostro.jpg')
+  return apiFetchForm('/auth/register', formData, 12000)
+}
+
+export function faceLogin(foto) {
+  const formData = new FormData()
+  formData.append('foto', foto, 'rostro.jpg')
+  return apiFetchForm('/auth/face-login', formData, 8000)
+}
+
+export function credentialsLogin({ usuario, password }) {
+  return apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ usuario, password }),
+  }, 4000)
+}
+
 export function createSession({ userId, warehouse, mode }) {
   return apiFetch('/sessions', {
     method: 'POST',

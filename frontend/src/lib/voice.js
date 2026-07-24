@@ -61,9 +61,9 @@ export async function speakNatural(text, callbacks = {}) {
       if (controller.signal.aborted) return 'stopped'
       activeObjectUrl = URL.createObjectURL(audioBlob)
       activeAudio = new Audio(activeObjectUrl)
-      activeAudio.onplay = () => callbacks.onStart?.('openai')
+      activeAudio.onplay = () => callbacks.onStart?.('elevenlabs')
       activeAudio.onended = () => {
-        callbacks.onEnd?.('openai')
+        callbacks.onEnd?.('elevenlabs')
         stopSpeaking()
       }
       activeAudio.onerror = () => {
@@ -71,15 +71,15 @@ export async function speakNatural(text, callbacks = {}) {
         callbacks.onError?.()
       }
       await activeAudio.play()
-      return 'openai'
+      return 'elevenlabs'
     }
 
     activeMediaSource = new MediaSource()
     activeObjectUrl = URL.createObjectURL(activeMediaSource)
     activeAudio = new Audio(activeObjectUrl)
-    activeAudio.onplay = () => callbacks.onStart?.('openai')
+    activeAudio.onplay = () => callbacks.onStart?.('elevenlabs')
     activeAudio.onended = () => {
-      callbacks.onEnd?.('openai')
+      callbacks.onEnd?.('elevenlabs')
       stopSpeaking()
     }
     activeAudio.onerror = () => {
@@ -126,7 +126,7 @@ export async function speakNatural(text, callbacks = {}) {
     if (activeMediaSource.readyState === 'open' && !sourceBuffer.updating) {
       activeMediaSource.endOfStream()
     }
-    return 'openai'
+    return 'elevenlabs'
   } catch {
     if (controller.signal.aborted) return 'stopped'
     callbacks.onError?.()

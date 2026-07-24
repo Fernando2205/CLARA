@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CloudOff,
   CircleHelp,
+  Delete,
   Info,
   Lightbulb,
   Mic,
@@ -182,6 +183,34 @@ export function Toast({ message, type = 'ok' }) {
       <Icon size={19} />
       <span>{message}</span>
     </div>
+  )
+}
+
+export function PinPad({ value, onChange, length = 4 }) {
+  const press = (digit) => {
+    if (value.length >= length) return
+    onChange(`${value}${digit}`)
+  }
+  const backspace = () => onChange(value.slice(0, -1))
+
+  return (
+    <>
+      <div className="pin-dots" aria-label={`${value.length} de ${length} dígitos`}>
+        {Array.from({ length }).map((_, dot) => (
+          <span className={value.length > dot ? 'filled' : ''} key={dot} />
+        ))}
+      </div>
+      <div className="pin-grid">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+          <button type="button" key={digit} onClick={() => press(digit)}>{digit}</button>
+        ))}
+        <span />
+        <button type="button" onClick={() => press(0)}>0</button>
+        <button type="button" aria-label="Borrar último dígito" onClick={backspace}>
+          <Delete size={24} />
+        </button>
+      </div>
+    </>
   )
 }
 

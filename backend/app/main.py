@@ -8,7 +8,7 @@ from seed.seed import seed_if_empty
 
 from .config import get_settings
 from .db import connect
-from .routers import assistant, extract, inventory, report, sessions, speech, transcribe, validate
+from .routers import assistant, auth, extract, inventory, report, sessions, speech, transcribe, validate
 
 settings = get_settings()
 settings.generated_dir.mkdir(parents=True, exist_ok=True)
@@ -34,6 +34,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth.router)
 app.include_router(extract.router)
 app.include_router(assistant.router)
 app.include_router(inventory.router)
@@ -54,6 +55,6 @@ def health() -> dict:
         "database": "ok",
         "articulos": articles,
         "openai_configurado": bool(settings.openai_api_key),
-        "voz_natural_configurada": bool(settings.openai_api_key),
-        "modelo_voz": settings.voice_model,
+        "voz_natural_configurada": bool(settings.elevenlabs_api_key and settings.elevenlabs_voice_id),
+        "modelo_voz": settings.elevenlabs_model,
     }

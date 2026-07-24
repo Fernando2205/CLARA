@@ -45,9 +45,9 @@ async def speak(payload: SpeechRequest, request: Request) -> StreamingResponse:
         media_type="audio/mpeg",
         headers={
             "Cache-Control": "private, max-age=86400",
-            "X-Clara-Voice": "openai",
-            "X-Clara-Model": get_settings().voice_model,
-            "X-Clara-Speaker": get_settings().voice_name,
+            "X-Clara-Voice": "elevenlabs",
+            "X-Clara-Model": get_settings().elevenlabs_model,
+            "X-Clara-Speaker": get_settings().elevenlabs_voice_id,
             "X-Clara-Cache": "hit" if cached else "miss",
         },
     )

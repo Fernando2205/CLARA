@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { flushSync } from 'react-dom'
 import Identificacion from './screens/Identificacion'
+import Registro from './screens/Registro'
 import SeleccionBodega from './screens/SeleccionBodega'
+import MapaBodega from './screens/MapaBodega'
 import Captura from './screens/Captura'
 import ResumenFirma from './screens/ResumenFirma'
 import ReporteEnvio from './screens/ReporteEnvio'
@@ -9,12 +11,12 @@ import Perfil from './screens/Perfil'
 import { useAuthStore } from './stores/auth'
 import { useSessionStore } from './stores/session'
 
-const screens = ['identificacion', 'bodega', 'captura', 'resumen', 'reporte', 'perfil']
+const screens = ['identificacion', 'registro', 'bodega', 'mapa', 'captura', 'resumen', 'reporte', 'perfil']
 
 export default function App() {
   const [screen, setScreen] = useState('identificacion')
   const [previous, setPrevious] = useState('bodega')
-  const signOut = useAuthStore((state) => state.signOut)
+  const signOut = useAuthStore((state) => state.logout)
   const reset = useSessionStore((state) => state.reset)
 
   const go = (next, forcedDirection) => {
@@ -63,8 +65,25 @@ export default function App() {
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <div id="main-content">
         <div className="app-stage" data-screen={screen} key={screen}>
-          {screen === 'identificacion' && <Identificacion onContinue={() => go('bodega')} />}
-          {screen === 'bodega' && <SeleccionBodega onContinue={() => go('captura')} onProfile={openProfile} />}
+          {screen === 'identificacion' && (
+            <Identificacion onContinue={() => go('bodega')} onRegister={() => go('registro')} />
+          )}
+          {screen === 'registro' && (
+            <Registro
+              onDone={() => go('bodega')}
+              onBack={() => go('identificacion', 'back')}
+            />
+          )}
+          {screen === 'bodega' && (
+            <SeleccionBodega
+              onContinue={() => go('captura')}
+              onMap={() => go('mapa')}
+              onProfile={openProfile}
+            />
+          )}
+          {screen === 'mapa' && (
+            <MapaBodega onBack={() => go('bodega', 'back')} onProfile={openProfile} />
+          )}
           {screen === 'captura' && (
             <Captura
               onClose={() => go('resumen')}

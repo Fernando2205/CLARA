@@ -76,9 +76,33 @@ def connect() -> sqlite3.Connection:
     return connection
 
 
+USUARIOS_NEW_COLUMNS = {
+    "cedula": "TEXT",
+    "correo": "TEXT",
+    "face_embedding": "BLOB",
+    "face_embedding_model": "TEXT",
+}
+
+
+def migrate_db(connection: sqlite3.Connection) -> None:
+    existing = {row["name"] for row in connection.execute("PRAGMA table_info(usuarios)")}
+    for column, column_type in USUARIOS_NEW_COLUMNS.items():
+        if column not in existing:
+            connection.execute(f"ALTER TABLE usuarios ADD COLUMN {column} {column_type}")
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_cedula "
+        "ON usuarios(cedula) WHERE cedula IS NOT NULL"
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_correo "
+        "ON usuarios(correo) WHERE correo IS NOT NULL"
+    )
+
+
 def init_db() -> None:
     with connect() as connection:
         connection.executescript(SCHEMA)
+        migrate_db(connection)
 
 
 def get_db() -> Iterator[sqlite3.Connection]:

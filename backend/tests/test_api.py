@@ -293,5 +293,5 @@ def test_speech_endpoint_streams_audio(monkeypatch):
         response = client.post("/speak", json={"texto": "Hola, soy Clara."})
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/mpeg"
-    assert response.headers["x-clara-voice"] == "openai"
+    assert response.headers["x-clara-voice"] == "elevenlabs"
     assert response.content == b"ID3-demo-mp3"
