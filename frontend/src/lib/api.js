@@ -57,17 +57,25 @@ export function toStoreUser(usuario) {
     cargo: usuario.cargo,
     turno: usuario.turno || '',
     bodega: usuario.bodega_asignada || '',
+    firma: usuario.firma_url ? `${API_URL}${usuario.firma_url}` : null,
   }
 }
 
-export function registerUser({ nombre, cedula, correo, pin, foto }) {
+export function registerUser({ nombre, cedula, correo, pin, foto, firma }) {
   const formData = new FormData()
   formData.append('nombre', nombre)
   formData.append('cedula', cedula)
   formData.append('correo', correo)
   formData.append('pin', pin)
   formData.append('foto', foto, 'rostro.jpg')
+  formData.append('firma', firma, 'firma.png')
   return apiFetchForm('/auth/register', formData, 12000)
+}
+
+export function updateSignature(userId, firma) {
+  const formData = new FormData()
+  formData.append('firma', firma, 'firma.png')
+  return apiFetchForm(`/auth/usuarios/${userId}/firma`, formData, 8000)
 }
 
 export function faceLogin(foto) {
@@ -162,6 +170,24 @@ export function saveInventoryRecord(sessionId, payload) {
     method: 'POST',
     body: JSON.stringify(payload),
   }, 5000)
+}
+
+export function getSessionSummary(sessionId) {
+  return apiFetch(`/sessions/${sessionId}/resumen`, {}, 6000)
+}
+
+export function signSession(sessionId, { usuario, password }) {
+  return apiFetch(`/sessions/${sessionId}/firmar`, {
+    method: 'POST',
+    body: JSON.stringify({ usuario, password }),
+  }, 6000)
+}
+
+export function requestReport(sessionId, { formatos, enviar, alcance = 'contados' }) {
+  return apiFetch('/report', {
+    method: 'POST',
+    body: JSON.stringify({ sesion_id: sessionId, formatos, enviar, alcance }),
+  }, 20000)
 }
 
 export { API_URL }

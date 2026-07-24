@@ -20,7 +20,8 @@ async def report(
     settings = get_settings()
     try:
         generated = generate_reports(
-            connection, request.sesion_id, request.formatos, settings.generated_dir
+            connection, request.sesion_id, request.formatos, settings.generated_dir,
+            alcance=request.alcance,
         )
     except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error

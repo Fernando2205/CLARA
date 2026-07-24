@@ -39,7 +39,10 @@ export default function SeleccionBodega({ onContinue, onMap, onProfile }) {
   const selected = useSessionStore((state) => state.bodega)
   const user = useAuthStore((state) => state.user)
 
-  const select = (warehouse) => setBodega(warehouse.id, warehouse.label)
+  const select = (warehouse) => {
+    setBodega(warehouse.id, warehouse.label)
+    onContinue()
+  }
 
   return (
     <main className="warehouse-screen">

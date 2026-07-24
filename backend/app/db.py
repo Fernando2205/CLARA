@@ -81,6 +81,7 @@ USUARIOS_NEW_COLUMNS = {
     "correo": "TEXT",
     "face_embedding": "BLOB",
     "face_embedding_model": "TEXT",
+    "firma_path": "TEXT",
 }
 
 

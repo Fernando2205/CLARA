@@ -125,6 +125,7 @@ class ReportRequest(BaseModel):
     sesion_id: str
     formatos: list[Literal["pdf", "xlsx", "csv"]] = ["pdf", "xlsx", "csv"]
     enviar: ReportSend = ReportSend()
+    alcance: Literal["contados", "completo", "faltantes"] = "contados"
 
 
 class ReportResponse(BaseModel):
@@ -206,6 +207,7 @@ class UsuarioOut(BaseModel):
     cargo: str
     bodega_asignada: str | None = None
     turno: str | None = None
+    firma_url: str | None = None
 
 
 class RegisterResponse(BaseModel):

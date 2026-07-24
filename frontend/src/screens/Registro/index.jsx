@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ArrowLeft, Camera, UserPlus } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { Button, Logo, PinPad } from '../../components/ui'
+import { SignatureField } from '../../components/SignaturePad'
 import { useCamera } from '../../lib/useCamera'
 import { registerUser, toStoreUser } from '../../lib/api'
 
@@ -15,6 +16,7 @@ export default function Registro({ onDone, onBack }) {
   const [enviando, setEnviando] = useState(false)
   const login = useAuthStore((state) => state.login)
   const { videoRef, cameraState, captureFrame } = useCamera(true)
+  const firmaRef = useRef(null)
 
   const tomarFoto = async () => {
     setError('')
@@ -31,15 +33,21 @@ export default function Registro({ onDone, onBack }) {
   const submit = async (event) => {
     event.preventDefault()
     if (!listo) return
+    if (firmaRef.current?.isEmpty()) {
+      setError('Dibuja tu firma antes de crear la cuenta.')
+      return
+    }
     setEnviando(true)
     setError('')
     try {
+      const firma = await firmaRef.current.toBlob()
       const { usuario } = await registerUser({
         nombre: nombre.trim(),
         cedula: cedula.trim(),
         correo: correo.trim(),
         pin,
         foto,
+        firma,
       })
       login(toStoreUser(usuario))
       onDone()
@@ -57,7 +65,7 @@ export default function Registro({ onDone, onBack }) {
         <div className="pin-heading">
           <span>Alta de usuario</span>
           <h1>Crea tu cuenta</h1>
-          <p>Necesitamos tus datos y una foto de tu rostro para reconocerte la próxima vez.</p>
+          <p>Necesitamos tus datos, una foto de tu rostro para reconocerte y tu firma para sellar tus reportes.</p>
         </div>
 
         <form className="register-form" onSubmit={submit}>
@@ -88,6 +96,11 @@ export default function Registro({ onDone, onBack }) {
               {foto ? 'Tomar otra foto' : 'Tomar foto'}
             </Button>
             {foto && <p className="register-photo-ok">Foto lista ✓</p>}
+          </div>
+
+          <div className="register-signature">
+            <span className="credentials-field-label">Tu firma</span>
+            <SignatureField padRef={firmaRef} width={420} height={150} />
           </div>
 
           {error && <p className="credentials-error">{error}</p>}

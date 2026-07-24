@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   ArrowRight,
   Bell,
@@ -8,12 +8,15 @@ import {
   Download,
   FileText,
   LogOut,
+  PenLine,
   SlidersHorizontal,
   UserRound,
   Volume2,
   VolumeX,
 } from 'lucide-react'
 import { Avatar, Badge, Button, Logo, Toast } from '../../components/ui'
+import { SignatureField } from '../../components/SignaturePad'
+import { API_URL, updateSignature } from '../../lib/api'
 import { useAuthStore } from '../../stores/auth'
 
 const history = [
@@ -25,12 +28,36 @@ const history = [
 
 export default function Perfil({ onHome, onSignOut }) {
   const user = useAuthStore((state) => state.user)
+  const login = useAuthStore((state) => state.login)
   const [sound, setSound] = useState(true)
   const [toast, setToast] = useState('')
+  const [editingFirma, setEditingFirma] = useState(false)
+  const [savingFirma, setSavingFirma] = useState(false)
+  const firmaRef = useRef(null)
 
   const notify = (message) => {
     setToast(message)
     window.setTimeout(() => setToast(''), 2600)
+  }
+
+  const guardarFirma = async () => {
+    if (firmaRef.current?.isEmpty()) {
+      notify('Dibuja tu firma antes de guardar.')
+      return
+    }
+    setSavingFirma(true)
+    try {
+      const blob = await firmaRef.current.toBlob()
+      const usuario = await updateSignature(user.id, blob)
+      const firmaUrl = usuario.firma_url ? `${API_URL}${usuario.firma_url}?t=${Date.now()}` : user.firma
+      login({ ...user, firma: firmaUrl })
+      setEditingFirma(false)
+      notify('Firma guardada.')
+    } catch {
+      notify('No pudimos guardar tu firma. Intenta de nuevo.')
+    } finally {
+      setSavingFirma(false)
+    }
   }
 
   return (
@@ -87,6 +114,31 @@ export default function Perfil({ onHome, onSignOut }) {
             <div><UserRound size={20} /><span><small>Rol</small><strong>Operaria de inventario</strong></span></div>
             <div><Building2 size={20} /><span><small>Bodega asignada</small><strong>{user.bodega}</strong></span></div>
             <div><CalendarDays size={20} /><span><small>Turno</small><strong>Mañana · 06:00–14:00</strong></span></div>
+          </div>
+          <div className="profile-signature-card">
+            <span className="eyebrow"><PenLine size={14} /> Tu firma</span>
+            {!editingFirma ? (
+              <>
+                {user.firma ? (
+                  <img className="profile-signature-preview" src={user.firma} alt="Tu firma" />
+                ) : (
+                  <p className="profile-signature-empty">Aún no has guardado una firma. Se usa para sellar tus reportes.</p>
+                )}
+                <Button variant="secondary" icon={PenLine} onClick={() => setEditingFirma(true)}>
+                  {user.firma ? 'Actualizar firma' : 'Agregar firma'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <SignatureField padRef={firmaRef} width={280} height={120} />
+                <div className="profile-signature-actions">
+                  <Button onClick={guardarFirma} disabled={savingFirma}>
+                    {savingFirma ? 'Guardando…' : 'Guardar firma'}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setEditingFirma(false)}>Cancelar</Button>
+                </div>
+              </>
+            )}
           </div>
           <div className="profile-score">
             <span className="eyebrow">Este mes</span>

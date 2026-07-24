@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, DoorOpen } from 'lucide-react'
-import { StatTile, TopBar } from '../../components/ui'
-import { CATEGORY_ICON_PATHS, categorize, categoryLabel } from '../../lib/categories'
+import { CategoryIcon, StatTile, TopBar } from '../../components/ui'
+import { categorize, categoryLabel } from '../../lib/categories'
+import { deltaState } from '../../lib/deltaState'
 import { balancedGroups, sliceTreemap } from '../../lib/treemap'
 import { getInventory } from '../../lib/api'
 import { useSessionStore } from '../../stores/session'
@@ -13,24 +14,7 @@ const WING_HEIGHT = 480
 
 function computeState(item) {
   if (!item.contado_en_sesion) return 'pending'
-  if (item.cantidad_actual < 0) return 'bad'
-  if (item.stock_sistema > 0) {
-    const relDelta = Math.abs(item.cantidad_actual - item.stock_sistema) / item.stock_sistema
-    if (relDelta <= 0.08) return 'ok'
-    if (relDelta <= 0.25) return 'warn'
-    return 'bad'
-  }
-  return item.cantidad_actual === 0 ? 'ok' : 'warn'
-}
-
-function CategoryIcon({ id, size = 15 }) {
-  return (
-    <svg
-      viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      dangerouslySetInnerHTML={{ __html: CATEGORY_ICON_PATHS[id] || CATEGORY_ICON_PATHS.general }}
-    />
-  )
+  return deltaState(item.cantidad_actual, item.stock_sistema)
 }
 
 function ArrowEdge({ side }) {

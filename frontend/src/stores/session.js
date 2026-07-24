@@ -19,9 +19,10 @@ export const useSessionStore = create(persist((set) => ({
   online: true,
   corrections: 3,
   alertsResolved: 3,
-  signed: false,
+  signature: null,
   sessionId: null,
   setSessionId: (sessionId) => set({ sessionId }),
+  setSignature: (signature) => set({ signature }),
   setBodega: (bodega, bodegaLabel) => set((state) => ({
     bodega,
     bodegaLabel,
@@ -52,12 +53,11 @@ export const useSessionStore = create(persist((set) => ({
       alertsResolved: state.alertsResolved + (updates.resolvedAlertCount || 0),
     })),
   undoLast: () => set((state) => ({ records: state.records.slice(1) })),
-  sign: () => set({ signed: true }),
   reset: () => set({
     records: initialRecords,
     corrections: 3,
     alertsResolved: 3,
-    signed: false,
+    signature: null,
     sessionId: null,
   }),
 }), {
@@ -70,7 +70,7 @@ export const useSessionStore = create(persist((set) => ({
     online: state.online,
     corrections: state.corrections,
     alertsResolved: state.alertsResolved,
-    signed: state.signed,
+    signature: state.signature,
     sessionId: state.sessionId,
   }),
 }))

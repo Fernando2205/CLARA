@@ -11,6 +11,17 @@ import {
   RotateCcw,
   Wifi,
 } from 'lucide-react'
+import { CATEGORY_ICON_PATHS } from '../lib/categories'
+
+export function CategoryIcon({ id, size = 15 }) {
+  return (
+    <svg
+      viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: CATEGORY_ICON_PATHS[id] || CATEGORY_ICON_PATHS.general }}
+    />
+  )
+}
 
 export function Tangram({ size = 32, className = '' }) {
   return (

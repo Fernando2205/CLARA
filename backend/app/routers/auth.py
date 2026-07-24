@@ -6,6 +6,7 @@ import sqlite3
 import numpy as np
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from ..config import get_settings
 from ..db import get_db
 from ..models import (
     CredentialsLoginRequest,
@@ -21,13 +22,19 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 PIN_PATTERN = re.compile(r"^\d{4}$")
 
 
+def firma_path_for(usuario_id: int):
+    return get_settings().firma_dir / f"{usuario_id}.png"
+
+
 def to_usuario_out(row: sqlite3.Row) -> UsuarioOut:
+    tiene_firma = firma_path_for(row["id"]).exists()
     return UsuarioOut(
         id=row["id"],
         nombre=row["nombre"],
         cargo=row["cargo"],
         bodega_asignada=row["bodega_asignada"],
         turno=row["turno"],
+        firma_url=f"/firmas/{row['id']}.png" if tiene_firma else None,
     )
 
 
@@ -48,6 +55,13 @@ async def _read_embedding(foto: UploadFile) -> np.ndarray:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+async def _save_firma(usuario_id: int, firma: UploadFile) -> None:
+    data = await firma.read()
+    if not data:
+        raise HTTPException(status_code=422, detail="La firma está vacía")
+    firma_path_for(usuario_id).write_bytes(data)
+
+
 @router.post("/register", response_model=RegisterResponse)
 async def register(
     nombre: str = Form(...),
@@ -55,6 +69,7 @@ async def register(
     correo: str = Form(...),
     pin: str = Form(...),
     foto: UploadFile = File(...),
+    firma: UploadFile = File(...),
     connection: sqlite3.Connection = Depends(get_db),
 ) -> RegisterResponse:
     nombre = nombre.strip()
@@ -75,6 +90,9 @@ async def register(
         )
 
     embedding = await _read_embedding(foto)
+    firma_bytes = await firma.read()
+    if not firma_bytes:
+        raise HTTPException(status_code=422, detail="Debes dibujar tu firma antes de registrarte")
 
     match = face.find_best_match(embedding, _enrolled_embeddings(connection))
     if match is not None and match[1] >= face.MATCH_THRESHOLD:
@@ -94,10 +112,28 @@ async def register(
         ),
     )
     connection.commit()
+    usuario_id = cursor.lastrowid
+    firma_path_for(usuario_id).write_bytes(firma_bytes)
+
     row = connection.execute(
-        "SELECT * FROM usuarios WHERE id = ?", (cursor.lastrowid,)
+        "SELECT * FROM usuarios WHERE id = ?", (usuario_id,)
     ).fetchone()
     return RegisterResponse(usuario=to_usuario_out(row))
+
+
+@router.post("/usuarios/{usuario_id}/firma", response_model=UsuarioOut)
+async def guardar_firma(
+    usuario_id: int,
+    firma: UploadFile = File(...),
+    connection: sqlite3.Connection = Depends(get_db),
+) -> UsuarioOut:
+    row = connection.execute(
+        "SELECT * FROM usuarios WHERE id = ?", (usuario_id,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await _save_firma(usuario_id, firma)
+    return to_usuario_out(row)
 
 
 @router.post("/face-login", response_model=FaceLoginResult)

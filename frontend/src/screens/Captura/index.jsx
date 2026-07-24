@@ -130,17 +130,12 @@ function mapBackendExtraction(response, phrase, warehouse, records, spokenIntro)
 }
 
 function alertSpeech(alert) {
-  const interpretation = {
-    V1: 'La cantidad está muy lejos de lo habitual. Haz una segunda comprobación.',
-    V2: 'La unidad no coincide con el catálogo. Confirma cuál debemos usar.',
-    V3: 'Falta un dato para guardar el conteo.',
-    V4: 'El saldo del sistema es inconsistente. Usa el conteo físico.',
-    V5: 'Este producto ya fue contado. Elige si quieres sumar o reemplazar.',
-    V6: 'Este producto requiere unidades enteras. Revisa la cantidad.',
-    V7: 'Necesito saber cuántas unidades trae cada empaque.',
-  }[alert.rule] || 'Encontré un dato poco usual. Revísalo antes de guardar.'
-
-  return interpretation
+  const prefix = {
+    V1: 'Un momento. ',
+    V2: 'Espera, ',
+    V5: 'Un momento, ',
+  }[alert.rule] || ''
+  return `${prefix}${alert.message}`
 }
 
 function isConversationalQuery(phrase) {
@@ -149,7 +144,7 @@ function isConversationalQuery(phrase) {
     && !/\d/.test(normalized)
 }
 
-export default function Captura({ onClose, onProfile, onBack }) {
+export default function Captura({ onClose, onReport, onProfile, onBack, autoStart, onAutoStartHandled }) {
   const userId = useAuthStore((state) => state.user.id)
   const warehouse = useSessionStore((state) => state.bodega)
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
@@ -184,6 +179,7 @@ export default function Captura({ onClose, onProfile, onBack }) {
   const [toast, setToast] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [inventoryOpen, setInventoryOpen] = useState(false)
+  const [autoListen, setAutoListen] = useState(false)
   const listener = useRef(null)
   const conversationScroll = useRef(null)
   const speechSequence = useRef(0)
@@ -216,6 +212,30 @@ export default function Captura({ onClose, onProfile, onBack }) {
   }, [activeCaption, messages, pending, voiceState])
 
   useEffect(() => () => stopSpeaking(), [])
+
+  useEffect(() => {
+    if (!autoStart) return
+    setAutoListen(true)
+    listener.current = listenOnce({
+      onStart: () => setVoiceState('listening'),
+      onInterim: setInterim,
+      onFinal: processPhrase,
+      onError: (message) => {
+        setVoiceState('idle')
+        showToast(message)
+      },
+    })
+    if (listener.current.supported === false) setAutoListen(false)
+    onAutoStartHandled?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!autoListen || voiceState !== 'idle') return undefined
+    const timer = window.setTimeout(() => startListening(), 550)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoListen, voiceState])
 
   const showToast = useCallback((message) => {
     setToast(message)
@@ -362,15 +382,10 @@ export default function Captura({ onClose, onProfile, onBack }) {
     }
   }
 
-  const toggleVoice = () => {
+  const startListening = () => {
     speechSequence.current += 1
     stopSpeaking()
     setActiveCaption('')
-    if (voiceState === 'listening') {
-      listener.current?.stop()
-      setVoiceState('idle')
-      return
-    }
     listener.current = listenOnce({
       onStart: () => setVoiceState('listening'),
       onInterim: setInterim,
@@ -380,6 +395,30 @@ export default function Captura({ onClose, onProfile, onBack }) {
         showToast(message)
       },
     })
+    if (listener.current.supported === false) setAutoListen(false)
+  }
+
+  const toggleVoice = () => {
+    if (voiceState === 'listening') {
+      setAutoListen(false)
+      speechSequence.current += 1
+      stopSpeaking()
+      setActiveCaption('')
+      listener.current?.stop()
+      setVoiceState('idle')
+      return
+    }
+    startListening()
+  }
+
+  const stopContinuousListening = () => {
+    setAutoListen(false)
+    speechSequence.current += 1
+    stopSpeaking()
+    setActiveCaption('')
+    listener.current?.stop()
+    setVoiceState('idle')
+    showToast('Escucha continua detenida.')
   }
 
   const toggleSpokenResponses = () => {
@@ -454,6 +493,16 @@ export default function Captura({ onClose, onProfile, onBack }) {
 
     if (pending.isCorrection) {
       updateRecord(pending.id, { quantity, resolvedAlertCount })
+      if (online && sessionId && pending.articleId) {
+        saveInventoryRecord(sessionId, {
+          articulo_id: pending.articleId,
+          cantidad_fisica: Number(quantity),
+          unidad: pending.catalogUnit,
+          estado_producto: pending.state,
+          confianza: pending.confidence,
+          alertas: [],
+        }).catch(() => showToast('Corrección guardada local; se sincronizará cuando vuelva el backend.'))
+      }
       const visibleMessage = `Corrección guardada · ${pending.name} · ${quantity} ${pending.unit}`
       const spokenMessage = `Actualicé ${pending.name.toLowerCase()} a ${quantity} ${pending.unit}.`
       appendMessage('assistant', visibleMessage, 'CLARA · actualizado')
@@ -467,6 +516,16 @@ export default function Captura({ onClose, onProfile, onBack }) {
       const previous = records.find((record) => record.id === duplicateAlert.duplicateId)
       const nextQuantity = duplicateAction === 'sum' ? Number(previous.quantity) + Number(quantity) : quantity
       updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount })
+      if (online && sessionId && pending.articleId) {
+        saveInventoryRecord(sessionId, {
+          articulo_id: pending.articleId,
+          cantidad_fisica: Number(nextQuantity),
+          unidad: pending.catalogUnit,
+          estado_producto: pending.state,
+          confianza: pending.confidence,
+          alertas: [],
+        }).catch(() => showToast('Guardado local; se sincronizará cuando vuelva el backend.'))
+      }
       const visibleMessage = `${duplicateAction === 'sum' ? 'Conteos sumados' : 'Conteo reemplazado'} · ${pending.name} · ${nextQuantity} ${pending.unit}`
       const spokenMessage = duplicateAction === 'sum'
         ? `${pending.name} queda en ${nextQuantity} ${pending.unit}, sumando ambos conteos.`
@@ -545,6 +604,12 @@ export default function Captura({ onClose, onProfile, onBack }) {
                 <h1>Cuenta, pregunta y confirma hablando</h1>
               </div>
               <div className="capture-context-actions">
+                {autoListen && (
+                  <button className="auto-listen-chip" onClick={stopContinuousListening} title="Detener escucha continua">
+                    <span className="auto-listen-dot" aria-hidden="true" />
+                    <span>Escucha continua</span>
+                  </button>
+                )}
                 <button
                   onClick={toggleSpokenResponses}
                   aria-pressed={voiceEnabled}
@@ -721,6 +786,7 @@ export default function Captura({ onClose, onProfile, onBack }) {
           total={total}
           alerts={alertsResolved}
           onClose={onClose}
+          onReport={onReport}
           onOpenInventory={() => setInventoryOpen(true)}
           mobileOpen={sheetOpen}
           onMobileToggle={() => setSheetOpen((value) => !value)}

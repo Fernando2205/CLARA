@@ -1,4 +1,4 @@
-import { Boxes, ChevronDown, ClipboardCheck } from 'lucide-react'
+import { Boxes, ChevronDown, ClipboardCheck, FileText } from 'lucide-react'
 import { Badge, Button, Progress, Tangram } from './ui'
 
 export default function SessionPanel({
@@ -7,6 +7,7 @@ export default function SessionPanel({
   total,
   alerts,
   onClose,
+  onReport,
   onOpenInventory,
   mobileOpen,
   onMobileToggle,
@@ -59,7 +60,9 @@ export default function SessionPanel({
       </div>
       <div className="session-panel-foot">
         <Button variant="secondary" onClick={onClose}>Cerrar y firmar</Button>
-        <span>12 min · 3 correcciones</span>
+        <button className="report-shortcut" onClick={onReport}>
+          <FileText size={16} /> Generar reporte con lo contado hasta ahora
+        </button>
       </div>
     </aside>
   )

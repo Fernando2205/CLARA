@@ -12,6 +12,7 @@ from .routers import assistant, auth, extract, inventory, report, sessions, spee
 
 settings = get_settings()
 settings.generated_dir.mkdir(parents=True, exist_ok=True)
+settings.firma_dir.mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager
@@ -44,6 +45,7 @@ app.include_router(speech.router)
 app.include_router(sessions.router)
 app.include_router(report.router)
 app.mount("/files", StaticFiles(directory=settings.generated_dir), name="files")
+app.mount("/firmas", StaticFiles(directory=settings.firma_dir), name="firmas")
 
 
 @app.get("/health")

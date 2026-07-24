@@ -6,7 +6,10 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.services import face as face_service
 
-FOTO = {"foto": ("rostro.jpg", b"fake-image-bytes", "image/jpeg")}
+FOTO = {
+    "foto": ("rostro.jpg", b"fake-image-bytes", "image/jpeg"),
+    "firma": ("firma.png", b"fake-signature-bytes", "image/png"),
+}
 
 
 def random_embedding() -> np.ndarray:
@@ -36,13 +39,26 @@ def test_register_creates_user_and_face_login_matches(monkeypatch):
             "/auth/register", data=register_payload(), files=FOTO
         )
         assert created.status_code == 200
-        usuario_id = created.json()["usuario"]["id"]
+        usuario = created.json()["usuario"]
+        assert usuario["firma_url"] == f"/firmas/{usuario['id']}.png"
 
         login = client.post("/auth/face-login", files=FOTO)
         assert login.status_code == 200
         body = login.json()
         assert body["resultado"] == "confirmado"
-        assert body["usuario"]["id"] == usuario_id
+        assert body["usuario"]["id"] == usuario["id"]
+        assert body["usuario"]["firma_url"] == f"/firmas/{usuario['id']}.png"
+
+
+def test_register_requires_firma(monkeypatch):
+    monkeypatch.setattr(face_service, "extract_embedding", lambda _: random_embedding())
+    with TestClient(app) as client:
+        response = client.post(
+            "/auth/register",
+            data=register_payload(),
+            files={"foto": FOTO["foto"], "firma": ("firma.png", b"", "image/png")},
+        )
+    assert response.status_code == 422
 
 
 def test_face_login_no_match_falls_back(monkeypatch):
@@ -93,8 +109,31 @@ def test_credentials_login_reuses_sign_logic():
         )
         assert ok.status_code == 200
         assert ok.json()["nombre"] == "Sofía Valencia"
+        # firma_url puede ser None o una ruta real, según si ya se guardó una firma
+        # para este usuario en este entorno; solo verificamos que el campo existe.
+        assert "firma_url" in ok.json()
 
         wrong = client.post(
             "/auth/login", json={"usuario": "Sofía Valencia", "password": "0000"}
         )
         assert wrong.status_code == 401
+
+
+def test_guardar_firma_actualiza_usuario_existente(monkeypatch):
+    monkeypatch.setattr(face_service, "extract_embedding", lambda _: random_embedding())
+    with TestClient(app) as client:
+        created = client.post("/auth/register", data=register_payload(), files=FOTO)
+        usuario_id = created.json()["usuario"]["id"]
+
+        updated = client.post(
+            f"/auth/usuarios/{usuario_id}/firma",
+            files={"firma": ("nueva.png", b"otra-firma-distinta", "image/png")},
+        )
+        assert updated.status_code == 200
+        assert updated.json()["firma_url"] == f"/firmas/{usuario_id}.png"
+
+        missing = client.post(
+            "/auth/usuarios/999999/firma",
+            files={"firma": ("nueva.png", b"algo", "image/png")},
+        )
+        assert missing.status_code == 404

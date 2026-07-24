@@ -20,6 +20,7 @@ class Settings:
         self.frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
         self.database_path = self._path("DATABASE_PATH", "clara.db")
         self.generated_dir = self._path("GENERATED_DIR", "generated")
+        self.firma_dir = self._path("FIRMA_DIR", "firmas")
         self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
         self.telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
         self.resend_api_key = os.getenv("RESEND_API_KEY", "").strip()

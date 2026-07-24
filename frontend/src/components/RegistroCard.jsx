@@ -1,5 +1,6 @@
 import { Minus, Plus, Tag, X } from 'lucide-react'
-import { Button, ConfidenceChip, InlineAlert } from './ui'
+import { categorize, categoryLabel } from '../lib/categories'
+import { Button, CategoryIcon, ConfidenceChip, InlineAlert } from './ui'
 
 export default function RegistroCard({
   record,
@@ -14,6 +15,7 @@ export default function RegistroCard({
   const blockingAlerts = record.alerts.filter((alert) => alert.level !== 'info')
   const unresolvedBlocking = blockingAlerts.filter((alert) => !resolvedAlerts.has(alert.rule))
   const visibleAlerts = record.alerts.filter((alert) => !resolvedAlerts.has(alert.rule)).slice(0, 1)
+  const category = categorize(record.name)
 
   return (
     <article className={`record-card ${unresolvedBlocking.length ? 'record-card-alert' : ''}`}>
@@ -28,9 +30,10 @@ export default function RegistroCard({
         <ConfidenceChip value={record.confidence} />
       </div>
       <div className="record-heading">
+        <span className="record-category-icon"><CategoryIcon id={category} size={22} /></span>
         <div>
           <h2>{record.name}</h2>
-          <p>Saldo en sistema: {Number(record.stock).toLocaleString('es-CO', { maximumFractionDigits: 2 })} {record.unit} · Toma física</p>
+          <p>{categoryLabel(category)} · Saldo en sistema: {Number(record.stock).toLocaleString('es-CO', { maximumFractionDigits: 2 })} {record.unit}</p>
         </div>
         {record.state && <span className="state-chip"><Tag size={14} />{record.state}</span>}
       </div>

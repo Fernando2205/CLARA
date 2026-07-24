@@ -295,3 +295,48 @@ def test_speech_endpoint_streams_audio(monkeypatch):
     assert response.headers["content-type"] == "audio/mpeg"
     assert response.headers["x-clara-voice"] == "elevenlabs"
     assert response.content == b"ID3-demo-mp3"
+
+
+def test_report_alcance_includes_faltantes():
+    with TestClient(app) as client:
+        created = client.post(
+            "/sessions",
+            json={"usuario_id": 1, "bodega": WAREHOUSE, "modo": "toma"},
+        )
+        session_id = created.json()["sesion_id"]
+
+        extracted = client.post(
+            "/extract",
+            json={"frase": "doce litros de aceite de ajonjoli", "bodega": WAREHOUSE},
+        ).json()
+        article_id = extracted["articulo"]["id"]
+        client.post(
+            f"/sessions/{session_id}/registros",
+            json={"articulo_id": article_id, "cantidad_fisica": 12, "unidad": "Liter"},
+        )
+
+        solo_contados = client.post(
+            "/report", json={"sesion_id": session_id, "formatos": ["csv"], "alcance": "contados"},
+        )
+        assert solo_contados.status_code == 200
+        contados_csv = client.get(solo_contados.json()["archivos"]["csv"]).text
+        assert "Sin contar" not in contados_csv
+        contados_lines = len(contados_csv.strip().splitlines())
+
+        faltantes = client.post(
+            "/report", json={"sesion_id": session_id, "formatos": ["csv"], "alcance": "faltantes"},
+        )
+        assert faltantes.status_code == 200
+        faltantes_csv = client.get(faltantes.json()["archivos"]["csv"]).text
+        assert "Sin contar" in faltantes_csv
+        assert "ACEITE DE AJONJOLI" not in faltantes_csv  # el contado no debe repetirse en faltantes
+        faltantes_lines = len(faltantes_csv.strip().splitlines())
+        assert faltantes_lines > contados_lines
+
+        completo = client.post(
+            "/report", json={"sesion_id": session_id, "formatos": ["csv"], "alcance": "completo"},
+        )
+        assert completo.status_code == 200
+        completo_csv = client.get(completo.json()["archivos"]["csv"]).text
+        completo_lines = len(completo_csv.strip().splitlines())
+        assert completo_lines == contados_lines + faltantes_lines - 1  # el encabezado no se duplica

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import csv
 import html
 import sqlite3
@@ -8,11 +9,43 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 
+SIN_CONTAR = "Sin contar"
 
-def report_data(connection: sqlite3.Connection, session_id: str) -> tuple[sqlite3.Row, list[sqlite3.Row]]:
+
+def _pending_rows(connection: sqlite3.Connection, session_id: str, bodega: str) -> list[dict]:
+    articulos = connection.execute(
+        """
+        SELECT sku, articulo, bodega, unidad, stock_sistema
+        FROM articulos
+        WHERE bodega = ?
+          AND id NOT IN (
+              SELECT articulo_id FROM registros WHERE sesion_id = ?
+          )
+        ORDER BY articulo
+        """,
+        (bodega, session_id),
+    ).fetchall()
+    return [
+        {
+            "sku": row["sku"],
+            "articulo": row["articulo"],
+            "bodega": row["bodega"],
+            "unidad": row["unidad"],
+            "stock_sistema": row["stock_sistema"],
+            "cantidad_fisica": None,
+            "estado_producto": SIN_CONTAR,
+            "corregido": 0,
+        }
+        for row in articulos
+    ]
+
+
+def report_data(
+    connection: sqlite3.Connection, session_id: str, alcance: str = "contados"
+) -> tuple[sqlite3.Row, list]:
     session = connection.execute(
         """
-        SELECT s.*, u.nombre, u.cargo FROM sesiones s
+        SELECT s.*, u.nombre, u.cargo, u.firma_path FROM sesiones s
         JOIN usuarios u ON u.id = s.usuario_id
         WHERE s.id = ?
         """,
@@ -20,7 +53,8 @@ def report_data(connection: sqlite3.Connection, session_id: str) -> tuple[sqlite
     ).fetchone()
     if not session:
         raise ValueError("Sesión no encontrada")
-    records = connection.execute(
+
+    contados = connection.execute(
         """
         SELECT r.*, a.sku, a.articulo, a.stock_sistema, a.bodega
         FROM registros r JOIN articulos a ON a.id = r.articulo_id
@@ -28,21 +62,34 @@ def report_data(connection: sqlite3.Connection, session_id: str) -> tuple[sqlite
         """,
         (session_id,),
     ).fetchall()
-    return session, records
+
+    if alcance == "contados":
+        return session, list(contados)
+
+    pendientes = _pending_rows(connection, session_id, session["bodega"])
+    if alcance == "faltantes":
+        return session, pendientes
+    return session, [*contados, *pendientes]
 
 
-def generate_csv(path: Path, records: list[sqlite3.Row]) -> None:
+def _fisico(row) -> float | None:
+    value = row["cantidad_fisica"]
+    return None if value is None else value
+
+
+def generate_csv(path: Path, records: list) -> None:
     with path.open("w", encoding="utf-8-sig", newline="") as output:
         writer = csv.writer(output, delimiter=";")
         writer.writerow(["CANTIDAD", "Nr.Artículo", "Artículo", "Unidad", "SD"])
         for row in records:
+            fisico = _fisico(row)
             writer.writerow([
-                row["cantidad_fisica"], row["sku"] or "", row["articulo"],
-                row["unidad"], row["cantidad_fisica"],
+                fisico if fisico is not None else SIN_CONTAR, row["sku"] or "", row["articulo"],
+                row["unidad"], fisico if fisico is not None else "",
             ])
 
 
-def generate_xlsx(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -> None:
+def generate_xlsx(path: Path, session: sqlite3.Row, records: list) -> None:
     workbook = Workbook()
     detail = workbook.active
     detail.title = "Detalle"
@@ -52,18 +99,24 @@ def generate_xlsx(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) 
     ]
     detail.append(headers)
     for row in records:
+        fisico = _fisico(row)
+        delta = fisico - row["stock_sistema"] if fisico is not None else None
         detail.append([
             row["sku"] or "", row["articulo"], row["bodega"],
-            row["cantidad_fisica"], row["unidad"], row["stock_sistema"],
-            row["cantidad_fisica"] - row["stock_sistema"],
-            row["estado_producto"] or "", "Sí" if row["corregido"] else "No",
+            fisico if fisico is not None else SIN_CONTAR, row["unidad"], row["stock_sistema"],
+            delta if delta is not None else "", row["estado_producto"] or "",
+            "Sí" if row["corregido"] else "No",
         ])
 
     differences = workbook.create_sheet("Diferencias")
     differences.append(["Artículo", "Físico", "Sistema", "Delta"])
     for row in records:
-        delta = row["cantidad_fisica"] - row["stock_sistema"]
-        differences.append([row["articulo"], row["cantidad_fisica"], row["stock_sistema"], delta])
+        fisico = _fisico(row)
+        delta = fisico - row["stock_sistema"] if fisico is not None else None
+        differences.append([
+            row["articulo"], fisico if fisico is not None else SIN_CONTAR,
+            row["stock_sistema"], delta if delta is not None else "",
+        ])
 
     for sheet in (detail, differences):
         for cell in sheet[1]:
@@ -82,21 +135,44 @@ def generate_xlsx(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) 
     workbook.save(path)
 
 
-def generate_pdf(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -> None:
+def generate_pdf(path: Path, session: sqlite3.Row, records: list) -> None:
     rows = []
     for row in records:
-        delta = row["cantidad_fisica"] - row["stock_sistema"]
+        fisico = _fisico(row)
+        if fisico is None:
+            rows.append(
+                "<tr class='pendiente'>"
+                f"<td>{html.escape(row['sku'] or '—')}</td>"
+                f"<td>{html.escape(row['articulo'])}</td>"
+                f"<td colspan='3'>{SIN_CONTAR}</td>"
+                "</tr>"
+            )
+            continue
+        delta = fisico - row["stock_sistema"]
         delta_class = "positive" if delta > 0 else "negative" if delta < 0 else ""
         rows.append(
             "<tr>"
             f"<td>{html.escape(row['sku'] or '—')}</td>"
             f"<td>{html.escape(row['articulo'])}</td>"
-            f"<td>{row['cantidad_fisica']:g}</td>"
+            f"<td>{fisico:g}</td>"
             f"<td>{html.escape(row['unidad'])}</td>"
             f"<td>{row['stock_sistema']:g}</td>"
             f"<td class='{delta_class}'>{delta:+g}</td>"
             "</tr>"
         )
+
+    # Solo se estampa la firma real si la sesión quedó formalmente firmada
+    # (hash_firma presente); un acta sin firmar no debe mostrar la firma personal.
+    firma_path = (
+        Path(session["firma_path"])
+        if session["firma_path"] and session["hash_firma"]
+        else None
+    )
+    firma_img_html = ""
+    if firma_path and firma_path.exists():
+        firma_data = base64.b64encode(firma_path.read_bytes()).decode()
+        firma_img_html = f"<img class='firma-img' src='data:image/png;base64,{firma_data}' alt='Firma'>"
+
     document = f"""
     <!doctype html>
     <html lang="es">
@@ -112,8 +188,11 @@ def generate_pdf(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -
       table {{ width:100%; border-collapse:collapse; }}
       th {{ background:#0069aa; color:white; text-align:left; padding:8px; }}
       td {{ padding:7px 8px; border-bottom:1px solid #d6e1e8; }}
+      tr.pendiente td {{ color:#9a6500; font-style:italic; }}
       .positive {{ color:#218739; }} .negative {{ color:#c72d37; }}
-      .signature {{ margin-top:24px; border-top:1px solid #9eb4c3; padding-top:12px; }}
+      .signature {{ margin-top:24px; display:flex; align-items:flex-end; gap:24px;
+                    border-top:1px solid #9eb4c3; padding-top:12px; }}
+      .firma-img {{ height:60px; }}
       .hash {{ font-family:monospace; font-size:9px; word-break:break-all; color:#5d7180; }}
     </style>
     <body>
@@ -126,8 +205,13 @@ def generate_pdf(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -
       </section>
       <table><thead><tr><th>SKU</th><th>Artículo</th><th>Físico</th><th>Unidad</th>
       <th>Sistema</th><th>Delta</th></tr></thead><tbody>{''.join(rows)}</tbody></table>
-      <section class="signature"><strong>Firma digital de la sesión</strong>
-      <p class="hash">{html.escape(session['hash_firma'] or 'Sesión aún no firmada')}</p></section>
+      <section class="signature">
+        <div>
+          <strong>Firma digital de la sesión</strong>
+          <p class="hash">{html.escape(session['hash_firma'] or 'Sesión aún no firmada')}</p>
+        </div>
+        {firma_img_html}
+      </section>
     </body></html>
     """
     try:
@@ -140,7 +224,8 @@ def generate_pdf(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -
         from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib.units import mm
-        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+        from reportlab.lib.utils import ImageReader
+        from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
         styles = getSampleStyleSheet()
         story = [
@@ -155,9 +240,13 @@ def generate_pdf(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -
         ]
         data = [["SKU", "Artículo", "Físico", "Unidad", "Sistema", "Delta"]]
         for row in records:
-            delta = row["cantidad_fisica"] - row["stock_sistema"]
+            fisico = _fisico(row)
+            if fisico is None:
+                data.append([row["sku"] or "—", row["articulo"], SIN_CONTAR, "", "", ""])
+                continue
+            delta = fisico - row["stock_sistema"]
             data.append([
-                row["sku"] or "—", row["articulo"], f"{row['cantidad_fisica']:g}",
+                row["sku"] or "—", row["articulo"], f"{fisico:g}",
                 row["unidad"], f"{row['stock_sistema']:g}", f"{delta:+g}",
             ])
         table = Table(data, repeatRows=1, colWidths=[24 * mm, 78 * mm, 20 * mm, 25 * mm, 22 * mm, 20 * mm])
@@ -178,6 +267,15 @@ def generate_pdf(path: Path, session: sqlite3.Row, records: list[sqlite3.Row]) -
                 styles["Code"],
             ),
         ])
+        if firma_path and firma_path.exists():
+            reader = ImageReader(str(firma_path))
+            natural_w, natural_h = reader.getSize()
+            max_w, max_h = 50 * mm, 20 * mm
+            scale = min(max_w / natural_w, max_h / natural_h)
+            story.extend([
+                Spacer(1, 3 * mm),
+                Image(str(firma_path), width=natural_w * scale, height=natural_h * scale),
+            ])
         SimpleDocTemplate(
             str(path), pagesize=landscape(A4), rightMargin=12 * mm,
             leftMargin=12 * mm, topMargin=12 * mm, bottomMargin=12 * mm,
@@ -189,8 +287,9 @@ def generate_reports(
     session_id: str,
     formats: list[str],
     output_root: Path,
+    alcance: str = "contados",
 ) -> dict[str, Path]:
-    session, records = report_data(connection, session_id)
+    session, records = report_data(connection, session_id, alcance)
     output_dir = output_root / session_id
     output_dir.mkdir(parents=True, exist_ok=True)
     generated: dict[str, Path] = {}

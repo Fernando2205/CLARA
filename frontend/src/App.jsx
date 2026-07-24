@@ -4,6 +4,7 @@ import Identificacion from './screens/Identificacion'
 import Registro from './screens/Registro'
 import SeleccionBodega from './screens/SeleccionBodega'
 import MapaBodega from './screens/MapaBodega'
+import PreConteo from './screens/PreConteo'
 import Captura from './screens/Captura'
 import ResumenFirma from './screens/ResumenFirma'
 import ReporteEnvio from './screens/ReporteEnvio'
@@ -11,11 +12,12 @@ import Perfil from './screens/Perfil'
 import { useAuthStore } from './stores/auth'
 import { useSessionStore } from './stores/session'
 
-const screens = ['identificacion', 'registro', 'bodega', 'mapa', 'captura', 'resumen', 'reporte', 'perfil']
+const screens = ['identificacion', 'registro', 'bodega', 'mapa', 'preconteo', 'captura', 'resumen', 'reporte', 'perfil']
 
 export default function App() {
   const [screen, setScreen] = useState('identificacion')
   const [previous, setPrevious] = useState('bodega')
+  const [autoStartVoice, setAutoStartVoice] = useState(false)
   const signOut = useAuthStore((state) => state.logout)
   const reset = useSessionStore((state) => state.reset)
 
@@ -76,7 +78,7 @@ export default function App() {
           )}
           {screen === 'bodega' && (
             <SeleccionBodega
-              onContinue={() => go('captura')}
+              onContinue={() => go('preconteo')}
               onMap={() => go('mapa')}
               onProfile={openProfile}
             />
@@ -84,11 +86,21 @@ export default function App() {
           {screen === 'mapa' && (
             <MapaBodega onBack={() => go('bodega', 'back')} onProfile={openProfile} />
           )}
+          {screen === 'preconteo' && (
+            <PreConteo
+              onBack={() => go('bodega', 'back')}
+              onProfile={openProfile}
+              onStart={() => { setAutoStartVoice(true); go('captura') }}
+            />
+          )}
           {screen === 'captura' && (
             <Captura
               onClose={() => go('resumen')}
+              onReport={() => go('reporte')}
               onProfile={openProfile}
               onBack={() => go('bodega', 'back')}
+              autoStart={autoStartVoice}
+              onAutoStartHandled={() => setAutoStartVoice(false)}
             />
           )}
           {screen === 'resumen' && (
