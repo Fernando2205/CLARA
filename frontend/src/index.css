@@ -1540,7 +1540,16 @@ p { font-size: 15px; line-height: 1.55; }
 .history-card-clickable { cursor: pointer; transition: box-shadow 150ms ease, transform 150ms ease; }
 .history-card-clickable:hover { box-shadow: 0 6px 18px rgba(0,103,177,.14); transform: translateY(-1px); }
 .history-card-clickable:focus-visible { outline: 2px solid var(--cs-azul); outline-offset: 2px; }
-.profile-card { min-height: calc(100vh - 56px); display: flex; flex-direction: column; border-left: 1px solid var(--cs-borde); background: white; }
+.profile-card {
+  position: sticky;
+  top: 56px;
+  max-height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--cs-borde);
+  background: white;
+}
 .profile-blue { min-height: 260px; padding: 34px 28px 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: var(--cs-azul); text-align: center; }
 .profile-avatar-wrap { position: relative; }
 .profile-avatar-wrap > .avatar { position: static; }
@@ -1697,7 +1706,7 @@ p { font-size: 15px; line-height: 1.55; }
   .history-card { grid-template-columns: 42px 1fr; }
   .history-card-actions { grid-column: 2; justify-self: start; }
   .history-card-actions .button { padding-left: 0; }
-  .profile-card { min-height: auto; border: 0; border-top: 1px solid var(--cs-borde); }
+  .profile-card { position: static; max-height: none; overflow-y: visible; border: 0; border-top: 1px solid var(--cs-borde); }
   .profile-blue { min-height: auto; padding-block: 28px; }
   .profile-logout { margin-top: 25px; }
 }
