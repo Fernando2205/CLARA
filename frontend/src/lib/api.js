@@ -1,6 +1,6 @@
 const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
 
-async function apiFetch(path, options = {}, timeoutMs = 3000) {
+async function apiFetch (path, options = {}, timeoutMs = 3000) {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -22,7 +22,7 @@ async function apiFetch(path, options = {}, timeoutMs = 3000) {
   }
 }
 
-async function apiFetchForm(path, formData, timeoutMs = 8000) {
+async function apiFetchForm (path, formData, timeoutMs = 8000) {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -41,7 +41,7 @@ async function apiFetchForm(path, formData, timeoutMs = 8000) {
   }
 }
 
-export function toStoreUser(usuario) {
+export function toStoreUser (usuario) {
   const [primerNombre] = usuario.nombre.trim().split(/\s+/)
   const iniciales = usuario.nombre
     .trim()
@@ -61,7 +61,7 @@ export function toStoreUser(usuario) {
   }
 }
 
-export function registerUser({ nombre, cedula, correo, pin, firma }) {
+export function registerUser ({ nombre, cedula, correo, pin, firma }) {
   const formData = new FormData()
   formData.append('nombre', nombre)
   formData.append('cedula', cedula)
@@ -71,27 +71,27 @@ export function registerUser({ nombre, cedula, correo, pin, firma }) {
   return apiFetchForm('/auth/register', formData, 12000)
 }
 
-export function updateSignature(userId, firma) {
+export function updateSignature (userId, firma) {
   const formData = new FormData()
   formData.append('firma', firma, 'firma.png')
   return apiFetchForm(`/auth/usuarios/${userId}/firma`, formData, 8000)
 }
 
-export function credentialsLogin({ usuario, password }) {
+export function credentialsLogin ({ usuario, password }) {
   return apiFetch('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ usuario, password }),
   }, 4000)
 }
 
-export function createSession({ userId, warehouse, mode }) {
+export function createSession ({ userId, warehouse, mode }) {
   return apiFetch('/sessions', {
     method: 'POST',
     body: JSON.stringify({ usuario_id: userId, bodega: warehouse, modo: mode }),
   }, 4500)
 }
 
-export function extractInventory({ phrase, warehouse, sessionId, lastSku }) {
+export function extractInventory ({ phrase, warehouse, sessionId, lastSku }) {
   return apiFetch('/extract', {
     method: 'POST',
     body: JSON.stringify({
@@ -103,7 +103,7 @@ export function extractInventory({ phrase, warehouse, sessionId, lastSku }) {
   }, 3000)
 }
 
-export function askClara({
+export function askClara ({
   phrase,
   warehouse,
   sessionId,
@@ -122,7 +122,7 @@ export function askClara({
   }, 3500)
 }
 
-export function getInventory({ warehouse, sessionId, query = '', status = 'todos' }) {
+export function getInventory ({ warehouse, sessionId, query = '', status = 'todos' }) {
   const params = new URLSearchParams({
     bodega: warehouse,
     q: query,
@@ -132,7 +132,7 @@ export function getInventory({ warehouse, sessionId, query = '', status = 'todos
   return apiFetch(`/inventory?${params.toString()}`, {}, 5000)
 }
 
-export async function getSpeechResponse(text, externalSignal, timeoutMs = 30000) {
+export async function getSpeechResponse (text, externalSignal, timeoutMs = 30000) {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
   const abortFromCaller = () => controller.abort()
@@ -151,43 +151,49 @@ export async function getSpeechResponse(text, externalSignal, timeoutMs = 30000)
   }
 }
 
-export function validateInventory(payload) {
+export function transcribeAudio (blob) {
+  const formData = new FormData()
+  formData.append('audio', blob, 'captura.webm')
+  return apiFetchForm('/transcribe', formData, 8000)
+}
+
+export function validateInventory (payload) {
   return apiFetch('/validate', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
-export function saveInventoryRecord(sessionId, payload) {
+export function saveInventoryRecord (sessionId, payload) {
   return apiFetch(`/sessions/${sessionId}/registros`, {
     method: 'POST',
     body: JSON.stringify(payload),
   }, 5000)
 }
 
-export function listUserSessions(userId) {
+export function listUserSessions (userId) {
   return apiFetch(`/sessions?usuario_id=${userId}`, {}, 6000)
 }
 
-export function getSessionSummary(sessionId) {
+export function getSessionSummary (sessionId) {
   return apiFetch(`/sessions/${sessionId}/resumen`, {}, 6000)
 }
 
-export function signSession(sessionId, { usuario, password }) {
+export function signSession (sessionId, { usuario, password }) {
   return apiFetch(`/sessions/${sessionId}/firmar`, {
     method: 'POST',
     body: JSON.stringify({ usuario, password }),
   }, 6000)
 }
 
-export function requestReport(sessionId, { formatos, enviar, alcance = 'contados' }) {
+export function requestReport (sessionId, { formatos, enviar, alcance = 'contados' }) {
   return apiFetch('/report', {
     method: 'POST',
     body: JSON.stringify({ sesion_id: sessionId, formatos, enviar, alcance }),
   }, 20000)
 }
 
-export function deleteReportFiles(sessionId) {
+export function deleteReportFiles (sessionId) {
   return apiFetch(`/report/${sessionId}`, { method: 'DELETE' }, 8000)
 }
 

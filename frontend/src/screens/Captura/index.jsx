@@ -49,7 +49,7 @@ const AFFIRMATIVE_ALERT_ACTIONS = {
   BODEGA: 'acknowledge',
 }
 
-function mapAlternative(item) {
+function mapAlternative (item) {
   return {
     articleId: item.id,
     name: item.nombre,
@@ -62,7 +62,7 @@ function mapAlternative(item) {
   }
 }
 
-function mapBackendExtraction(response, phrase, warehouse, records, spokenIntro) {
+function mapBackendExtraction (response, phrase, warehouse, records, spokenIntro) {
   if (response.tipo === 'correccion') {
     const previous = records[0]
     if (!previous) {
@@ -142,7 +142,7 @@ function mapBackendExtraction(response, phrase, warehouse, records, spokenIntro)
   return record
 }
 
-function alertSpeech(alert) {
+function alertSpeech (alert) {
   const prefix = {
     V1: 'Un momento. ',
     V2: 'Espera, ',
@@ -151,13 +151,13 @@ function alertSpeech(alert) {
   return `${prefix}${alert.message}`
 }
 
-function isConversationalQuery(phrase) {
+function isConversationalQuery (phrase) {
   const normalized = phrase.toLocaleLowerCase('es-CO')
-  return /(tenemos|hay|queda|existencias|inventario|por qué|por que|ayuda)/.test(normalized)
-    && !/\d/.test(normalized)
+  return /(tenemos|hay|queda|existencias|inventario|por qué|por que|ayuda)/.test(normalized) &&
+    !/\d/.test(normalized)
 }
 
-export default function Captura({ onClose, onReport, onProfile, onBack, autoStart, onAutoStartHandled }) {
+export default function Captura ({ onClose, onReport, onProfile, onBack, autoStart, onAutoStartHandled }) {
   const userId = useAuthStore((state) => state.user.id)
   const warehouse = useSessionStore((state) => state.bodega)
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
@@ -232,6 +232,7 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
       onStart: () => setVoiceState('listening'),
       onInterim: setInterim,
       onFinal: processPhrase,
+      onRefine: handleRefine,
       onError: (message) => {
         setVoiceState('idle')
         showToast(message)
@@ -311,6 +312,11 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     spokenCardSignature.current = signature
     speakResponse(text)
   }, [pending, resolvedAlerts, speakResponse, voiceEnabled])
+
+  const handleRefine = (refinedText) => {
+    showToast('Ajusté lo que escuché con una transcripción más precisa.')
+    processPhrase(refinedText)
+  }
 
   const clearPending = () => {
     setPending(null)
@@ -397,7 +403,7 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
           clean,
           warehouse,
           records,
-          spokenMessage,
+          spokenMessage
         )
         spokenCardSignature.current = ''
         setPending(parsed)
@@ -441,6 +447,7 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
       onStart: () => setVoiceState('listening'),
       onInterim: setInterim,
       onFinal: processPhrase,
+      onRefine: handleRefine,
       onError: (message) => {
         setVoiceState('idle')
         showToast(message)
@@ -543,14 +550,16 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     const duplicateAlert = pending.alerts.find((alert) => alert.rule === 'V5')
 
     if (pending.isCorrection) {
-      updateRecord(pending.id, { quantity, resolvedAlertCount }, sessionId && pending.articleId ? {
-        articulo_id: pending.articleId,
-        cantidad_fisica: Number(quantity),
-        unidad: pending.catalogUnit,
-        estado_producto: pending.state,
-        confianza: pending.confidence,
-        alertas: [],
-      } : null)
+      updateRecord(pending.id, { quantity, resolvedAlertCount }, sessionId && pending.articleId
+        ? {
+            articulo_id: pending.articleId,
+            cantidad_fisica: Number(quantity),
+            unidad: pending.catalogUnit,
+            estado_producto: pending.state,
+            confianza: pending.confidence,
+            alertas: [],
+          }
+        : null)
       const visibleMessage = `Corrección guardada · ${pending.name} · ${quantity} ${pending.unit}`
       const spokenMessage = `Actualicé ${pending.name.toLowerCase()} a ${quantity} ${pending.unit}.`
       appendMessage('assistant', visibleMessage, 'CLARA · actualizado')
@@ -563,14 +572,16 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     if (duplicateAlert && duplicateAction) {
       const previous = records.find((record) => record.id === duplicateAlert.duplicateId)
       const nextQuantity = duplicateAction === 'sum' ? Number(previous.quantity) + Number(quantity) : quantity
-      updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount }, sessionId && pending.articleId ? {
-        articulo_id: pending.articleId,
-        cantidad_fisica: Number(nextQuantity),
-        unidad: pending.catalogUnit,
-        estado_producto: pending.state,
-        confianza: pending.confidence,
-        alertas: [],
-      } : null)
+      updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount }, sessionId && pending.articleId
+        ? {
+            articulo_id: pending.articleId,
+            cantidad_fisica: Number(nextQuantity),
+            unidad: pending.catalogUnit,
+            estado_producto: pending.state,
+            confianza: pending.confidence,
+            alertas: [],
+          }
+        : null)
       const visibleMessage = `${duplicateAction === 'sum' ? 'Conteos sumados' : 'Conteo reemplazado'} · ${pending.name} · ${nextQuantity} ${pending.unit}`
       const spokenMessage = duplicateAction === 'sum'
         ? `${pending.name} queda en ${nextQuantity} ${pending.unit}, sumando ambos conteos.`
@@ -594,14 +605,16 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
       state: pending.state,
       confidence: pending.confidence,
       resolvedAlertCount,
-    }, sessionId && pending.articleId ? {
-      articulo_id: pending.articleId,
-      cantidad_fisica: Number(quantity),
-      unidad: pending.catalogUnit,
-      estado_producto: pending.state,
-      confianza: pending.confidence,
-      alertas: pending.alerts,
-    } : null)
+    }, sessionId && pending.articleId
+      ? {
+          articulo_id: pending.articleId,
+          cantidad_fisica: Number(quantity),
+          unidad: pending.catalogUnit,
+          estado_producto: pending.state,
+          confianza: pending.confidence,
+          alertas: pending.alerts,
+        }
+      : null)
     const visibleMessage = `Guardado · ${pending.name} · ${quantity} ${pending.unit}`
     const spokenMessage = `Guardé ${quantity} ${pending.unit} de ${pending.name.toLowerCase()}.`
     appendMessage('assistant', visibleMessage, online ? 'CLARA · sincronizado' : 'CLARA · guardado local')
@@ -615,7 +628,7 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     showToast(
       online
         ? 'Sin señal por aquí — sigo guardando en el teléfono. Todo se sube al volver.'
-        : 'Conexión recuperada. Los registros pendientes se están sincronizando.',
+        : 'Conexión recuperada. Los registros pendientes se están sincronizando.'
     )
   }
 
@@ -625,27 +638,27 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
   }[voiceState]
 
   return (
-    <main className="capture-screen">
+    <main className='capture-screen'>
       <TopBar
         title={bodegaLabel}
         online={online}
         onNetwork={handleNetwork}
         onProfile={onProfile}
         onBack={onBack}
-        backLabel="Bodegas"
+        backLabel='Bodegas'
       />
-      <div className="capture-layout">
-        <section className="conversation-panel">
-          <div className="conversation-scroll" ref={conversationScroll}>
-            <div className="capture-context">
+      <div className='capture-layout'>
+        <section className='conversation-panel'>
+          <div className='conversation-scroll' ref={conversationScroll}>
+            <div className='capture-context'>
               <div>
-                <span className="eyebrow">Toma física · Asistente conversacional</span>
+                <span className='eyebrow'>Toma física · Asistente conversacional</span>
                 <h1>Cuenta, pregunta y confirma hablando</h1>
               </div>
-              <div className="capture-context-actions">
+              <div className='capture-context-actions'>
                 {autoListen && (
-                  <button className="auto-listen-chip" onClick={stopContinuousListening} title="Detener escucha continua">
-                    <span className="auto-listen-dot" aria-hidden="true" />
+                  <button className='auto-listen-chip' onClick={stopContinuousListening} title='Detener escucha continua'>
+                    <span className='auto-listen-dot' aria-hidden='true' />
                     <span>Escucha continua</span>
                   </button>
                 )}
@@ -660,7 +673,7 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
                 <button
                   onClick={() => lastSpoken && speakResponse(lastSpoken)}
                   disabled={!lastSpoken || !voiceEnabled}
-                  title="Repetir última respuesta"
+                  title='Repetir última respuesta'
                 >
                   <Repeat2 size={18} />
                   <span>Repetir</span>
@@ -669,15 +682,15 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
               </div>
             </div>
 
-            <div className="conversation-messages" aria-live="polite">
+            <div className='conversation-messages' aria-live='polite'>
               {messages.map((message) => (
                 <div
                   className={`bubble ${message.role === 'assistant' ? 'bubble-clara' : 'bubble-user'}`}
                   key={message.id}
                 >
                   {message.role === 'assistant'
-                    ? <span className="clara-avatar"><Tangram size={23} /></span>
-                    : <Avatar size="xs" />}
+                    ? <span className='clara-avatar'><Tangram size={23} /></span>
+                    : <Avatar size='xs' />}
                   <div>
                     <p>{message.text}</p>
                     {message.meta && <small>{message.meta}</small>}
@@ -685,16 +698,16 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
                 </div>
               ))}
               {interim && (
-                <div className="bubble bubble-user interim">
-                  <Avatar size="xs" />
+                <div className='bubble bubble-user interim'>
+                  <Avatar size='xs' />
                   <p>{interim}</p>
                 </div>
               )}
             </div>
 
             {statusCopy && (
-              <div className={`voice-status-card voice-${voiceState}`} role="status">
-                <span className="voice-bars" aria-hidden="true">
+              <div className={`voice-status-card voice-${voiceState}`} role='status'>
+                <span className='voice-bars' aria-hidden='true'>
                   <i /><i /><i /><i /><i />
                 </span>
                 <div>
@@ -705,7 +718,7 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
             )}
 
             {!pending && voiceState === 'idle' && (
-              <div className="demo-prompts" aria-label="Frases de demostración">
+              <div className='demo-prompts' aria-label='Frases de demostración'>
                 <span>También puedes preguntarme</span>
                 <div>
                   {prompts.map((prompt) => (
@@ -716,42 +729,42 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
             )}
 
             {pending?.type === 'no_match' && (
-              <article className="capture-issue">
-                <span className="capture-issue-icon"><PackageSearch size={27} /></span>
+              <article className='capture-issue'>
+                <span className='capture-issue-icon'><PackageSearch size={27} /></span>
                 <div>
-                  <span className="eyebrow"><AlertTriangle size={14} /> Producto no encontrado</span>
+                  <span className='eyebrow'><AlertTriangle size={14} /> Producto no encontrado</span>
                   <h2>{pending.message}</h2>
                   <p>Prueba con un nombre más corto o consulta el inventario completo.</p>
                 </div>
                 {!!pending.alternatives.length && (
-                  <div className="issue-alternatives">
+                  <div className='issue-alternatives'>
                     <span>¿Será alguno de estos?</span>
                     {pending.alternatives.map((item) => (
                       <button key={item.sku || item.name} onClick={() => selectAlternative(item)}>{item.name}</button>
                     ))}
                   </div>
                 )}
-                <div className="record-actions">
+                <div className='record-actions'>
                   <Button onClick={() => setInventoryOpen(true)}>Ver inventario</Button>
-                  <Button variant="secondary" onClick={clearPending}>Intentar de nuevo</Button>
+                  <Button variant='secondary' onClick={clearPending}>Intentar de nuevo</Button>
                 </div>
               </article>
             )}
 
             {pending?.type === 'selection' && (
-              <article className="variant-picker" aria-labelledby="variant-picker-title">
-                <div className="variant-picker-heading">
-                  <span className="capture-issue-icon"><PackageSearch size={25} /></span>
+              <article className='variant-picker' aria-labelledby='variant-picker-title'>
+                <div className='variant-picker-heading'>
+                  <span className='capture-issue-icon'><PackageSearch size={25} /></span>
                   <div>
-                    <span className="eyebrow">Coincidencias en esta bodega</span>
-                    <h2 id="variant-picker-title">¿Cuál producto estás contando?</h2>
+                    <span className='eyebrow'>Coincidencias en esta bodega</span>
+                    <h2 id='variant-picker-title'>¿Cuál producto estás contando?</h2>
                     <p>Conservaremos la cantidad y la unidad que ya dijiste.</p>
                   </div>
                 </div>
-                <div className="variant-grid">
+                <div className='variant-grid'>
                   {pending.options.map((option) => (
                     <button
-                      type="button"
+                      type='button'
                       key={option.sku || `${option.warehouse}-${option.name}`}
                       onClick={() => selectAlternative(option)}
                       aria-label={`Seleccionar ${option.name}`}
@@ -760,14 +773,14 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
                         <strong>{option.name}</strong>
                         <small>{option.sku ? `SKU ${option.sku}` : 'Sin código SKU'}</small>
                       </span>
-                      <span className="variant-stock">
+                      <span className='variant-stock'>
                         <strong>{Number(option.stock).toLocaleString('es-CO', { maximumFractionDigits: 2 })}</strong>
                         <small>{option.unit} en sistema</small>
                       </span>
                     </button>
                   ))}
                 </div>
-                <Button variant="secondary" onClick={clearPending}>Cancelar selección</Button>
+                <Button variant='secondary' onClick={clearPending}>Cancelar selección</Button>
               </article>
             )}
 
@@ -786,32 +799,32 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
           </div>
 
           {activeCaption && (
-            <div className="spoken-caption" aria-label="Transcripción de la respuesta de CLARA">
-              <Volume2 size={17} aria-hidden="true" />
+            <div className='spoken-caption' aria-label='Transcripción de la respuesta de CLARA'>
+              <Volume2 size={17} aria-hidden='true' />
               <p>{activeCaption}</p>
             </div>
           )}
 
-          <div className="capture-dock">
+          <div className='capture-dock'>
             <form onSubmit={(event) => { event.preventDefault(); processPhrase(input) }}>
               <Keyboard size={20} />
               <input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Escribe un conteo o pregunta: ¿tenemos leche?"
-                aria-label="Hablar con Clara por texto"
+                placeholder='Escribe un conteo o pregunta: ¿tenemos leche?'
+                aria-label='Hablar con Clara por texto'
               />
-              <button type="submit" aria-label="Enviar a Clara"><Send size={21} /></button>
+              <button type='submit' aria-label='Enviar a Clara'><Send size={21} /></button>
             </form>
             <MicButton state={voiceState === 'speaking' ? 'idle' : voiceState} onClick={toggleVoice} />
             <button
-              className="undo-button"
+              className='undo-button'
               onClick={() => {
                 if (!records.length) return
                 undoLast()
                 showToast('Último registro deshecho.')
               }}
-              aria-label="Deshacer último registro"
+              aria-label='Deshacer último registro'
             >
               <Undo2 size={21} />
               <span>Deshacer</span>

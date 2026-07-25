@@ -1,16 +1,54 @@
-import { getSpeechResponse } from './api'
+import { getSpeechResponse, transcribeAudio } from './api'
 
 let activeAudio = null
 let activeObjectUrl = null
 let activeSpeechController = null
 let activeMediaSource = null
 
-export function listenOnce({ onStart, onInterim, onFinal, onError }) {
+const LOW_CONFIDENCE_THRESHOLD = 0.8
+
+function startBackupRecorder () {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return null
+
+  const state = { chunks: [], stream: null, recorder: null, ready: null }
+  state.ready = navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+    state.stream = stream
+    const recorder = new MediaRecorder(stream)
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) state.chunks.push(event.data)
+    }
+    recorder.start()
+    state.recorder = recorder
+    return recorder
+  }).catch(() => null)
+
+  return {
+    async stopAndGetBlob () {
+      await state.ready
+      const recorder = state.recorder
+      state.stream?.getTracks().forEach((track) => track.stop())
+      if (!recorder || recorder.state === 'inactive') return null
+      return new Promise((resolve) => {
+        recorder.onstop = () => resolve(new Blob(state.chunks, { type: recorder.mimeType || 'audio/webm' }))
+        recorder.stop()
+      })
+    },
+    discard () {
+      state.ready.then(() => {
+        state.stream?.getTracks().forEach((track) => track.stop())
+      })
+    },
+  }
+}
+
+export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError }) {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!Recognition) {
     onError?.('Tu navegador no ofrece dictado. Puedes escribir el conteo.')
     return { supported: false, stop: () => {} }
   }
+
+  const backup = startBackupRecorder()
 
   const recognition = new Recognition()
   recognition.lang = 'es-CO'
@@ -20,16 +58,47 @@ export function listenOnce({ onStart, onInterim, onFinal, onError }) {
   recognition.onresult = (event) => {
     const result = event.results[event.results.length - 1]
     const text = result[0].transcript
-    if (result.isFinal) onFinal?.(text)
-    else onInterim?.(text)
+    if (!result.isFinal) {
+      onInterim?.(text)
+      return
+    }
+    onFinal?.(text)
+    const confidence = result[0].confidence
+    if (!backup) return
+    if (confidence >= LOW_CONFIDENCE_THRESHOLD) {
+      backup.discard()
+      return
+    }
+    // Confianza baja del reconocimiento nativo: reintentamos en segundo
+    // plano con Whisper y, si trae texto distinto, lo ofrecemos como ajuste.
+    backup.stopAndGetBlob().then((blob) => {
+      if (!blob || blob.size === 0) return null
+      return transcribeAudio(blob)
+    }).then((result) => {
+      const refined = result?.texto?.trim()
+      if (refined && refined.toLowerCase() !== text.trim().toLowerCase()) {
+        onRefine?.(refined)
+      }
+    }).catch(() => {
+      // Sin conexión o backend caído: nos quedamos con la transcripción local.
+    })
   }
-  recognition.onerror = () => onError?.('No pude escuchar con claridad. Inténtalo otra vez o escribe el conteo.')
+  recognition.onerror = () => {
+    backup?.discard()
+    onError?.('No pude escuchar con claridad. Inténtalo otra vez o escribe el conteo.')
+  }
   recognition.start()
 
-  return { supported: true, stop: () => recognition.stop() }
+  return {
+    supported: true,
+    stop: () => {
+      backup?.discard()
+      recognition.stop()
+    },
+  }
 }
 
-export function stopSpeaking() {
+export function stopSpeaking () {
   activeSpeechController?.abort()
   activeSpeechController = null
   window.speechSynthesis?.cancel()
@@ -45,16 +114,16 @@ export function stopSpeaking() {
   activeMediaSource = null
 }
 
-export async function speakNatural(text, callbacks = {}) {
+export async function speakNatural (text, callbacks = {}) {
   stopSpeaking()
   const controller = new AbortController()
   activeSpeechController = controller
   try {
     const response = await getSpeechResponse(text, controller.signal)
     const canStream = (
-      response.body
-      && window.MediaSource
-      && window.MediaSource.isTypeSupported('audio/mpeg')
+      response.body &&
+      window.MediaSource &&
+      window.MediaSource.isTypeSupported('audio/mpeg')
     )
     if (!canStream) {
       const audioBlob = await response.blob()
