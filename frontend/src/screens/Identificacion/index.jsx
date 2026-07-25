@@ -3,7 +3,7 @@ import { KeyRound, ScanFace, UserPlus } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { Button, Logo, PinPad } from '../../components/ui'
 import { useCamera } from '../../lib/useCamera'
-import { identify } from '../../lib/facial'
+import { identify, loadModels } from '../../lib/facial'
 import { credentialsLogin, toStoreUser } from '../../lib/api'
 
 // Regla del §7.2: dos fallos consecutivos de reconocimiento O 5s sin
@@ -25,9 +25,19 @@ export default function Identificacion ({ onContinue, onRegister }) {
   const busyRef = useRef(false)
   const login = useAuthStore((state) => state.login)
   const { videoRef, cameraState } = useCamera(stage === 'face')
+  const [modelosListos, setModelosListos] = useState(false)
+  const [modelosError, setModelosError] = useState(false)
 
   useEffect(() => {
-    if (stage !== 'face' || cameraState !== 'live') return undefined
+    let active = true
+    loadModels()
+      .then(() => { if (active) setModelosListos(true) })
+      .catch(() => { if (active) setModelosError(true) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (stage !== 'face' || cameraState !== 'live' || !modelosListos) return undefined
 
     let cancelled = false
     failuresRef.current = 0
@@ -112,8 +122,18 @@ export default function Identificacion ({ onContinue, onRegister }) {
               </div>
 
               <div className='face-status' role='status' aria-live='polite'>
-                <ScanFace size={19} />
-                <span>{cameraState === 'live' ? statusText : 'Activa tu cámara para reconocerte'}</span>
+                {cameraState === 'live' && !modelosListos && !modelosError
+                  ? <span className='processing-dots'><i /><i /><i /></span>
+                  : <ScanFace size={19} />}
+                <span>
+                  {cameraState !== 'live'
+                    ? 'Activa tu cámara para reconocerte'
+                    : modelosError
+                      ? 'No pudimos cargar el reconocimiento facial. Usa tus credenciales.'
+                      : !modelosListos
+                          ? 'Preparando reconocimiento facial…'
+                          : statusText}
+                </span>
               </div>
 
               <div className='face-actions'>

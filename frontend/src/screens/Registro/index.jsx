@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Camera, UserPlus } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { Button, Logo, PinPad } from '../../components/ui'
 import { SignatureField } from '../../components/SignaturePad'
 import { useCamera } from '../../lib/useCamera'
-import { captureDescriptor, saveToGallery } from '../../lib/facial'
+import { captureDescriptor, loadModels, saveToGallery } from '../../lib/facial'
 import { registerUser, toStoreUser } from '../../lib/api'
 
 export default function Registro ({ onDone, onBack }) {
@@ -16,6 +16,8 @@ export default function Registro ({ onDone, onBack }) {
   const [enrolando, setEnrolando] = useState(false)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [modelosListos, setModelosListos] = useState(false)
+  const [modelosError, setModelosError] = useState(false)
   const login = useAuthStore((state) => state.login)
   const { videoRef, cameraState } = useCamera(true)
   const firmaRef = useRef(null)
@@ -23,6 +25,14 @@ export default function Registro ({ onDone, onBack }) {
   // se persiste en localStorage tras crear la cuenta; ninguna imagen de
   // rostro viaja al backend.
   const descriptorRef = useRef(null)
+
+  useEffect(() => {
+    let active = true
+    loadModels()
+      .then(() => { if (active) setModelosListos(true) })
+      .catch(() => { if (active) setModelosError(true) })
+    return () => { active = false }
+  }, [])
 
   const capturarRostro = async () => {
     setError('')
@@ -101,7 +111,24 @@ export default function Registro ({ onDone, onBack }) {
             <div className={`camera-frame camera-${cameraState}`} aria-label='Captura de rostro para registro'>
               <video ref={videoRef} autoPlay muted playsInline aria-label='Video de la cámara frontal' />
             </div>
-            <Button type='button' variant='secondary' icon={Camera} onClick={capturarRostro} disabled={enrolando}>
+            {!modelosListos && !modelosError && (
+              <p className='models-loading'>
+                <span className='processing-dots'><i /><i /><i /></span>
+                Preparando reconocimiento facial…
+              </p>
+            )}
+            {modelosError && (
+              <p className='register-photo-error'>
+                No pudimos cargar el reconocimiento facial. Verifica tu conexión y recarga la página.
+              </p>
+            )}
+            <Button
+              type='button'
+              variant='secondary'
+              icon={Camera}
+              onClick={capturarRostro}
+              disabled={enrolando || !modelosListos}
+            >
               {enrolando ? 'Leyendo tu rostro…' : rostroListo ? 'Capturar de nuevo' : 'Capturar rostro'}
             </Button>
             {rostroListo && <p className='register-photo-ok'>Rostro listo ✓ (se guarda solo en este dispositivo)</p>}

@@ -21,7 +21,7 @@ import { SignatureField } from '../../components/SignaturePad'
 import { API_URL, deleteReportFiles, listUserSessions, requestReport, updateSignature } from '../../lib/api'
 import { useAuthStore } from '../../stores/auth'
 import { useCamera } from '../../lib/useCamera'
-import { enroll, hasEnrolledFace } from '../../lib/facial'
+import { enroll, hasEnrolledFace, loadModels } from '../../lib/facial'
 
 const WAREHOUSE_LABELS = {
   'STOCK RESTAURANTE FUENTES AYB': 'Restaurante Fuentes · AyB',
@@ -44,8 +44,21 @@ export default function Perfil ({ onHome, onSignOut }) {
   const [loadingHistory, setLoadingHistory] = useState(true)
   const [openingId, setOpeningId] = useState('')
   const [deletingId, setDeletingId] = useState('')
+  const [modelosListos, setModelosListos] = useState(false)
+  const [modelosError, setModelosError] = useState(false)
   const firmaRef = useRef(null)
   const { videoRef, cameraState } = useCamera(enrolandoRostro)
+
+  useEffect(() => {
+    if (!enrolandoRostro) return undefined
+    let active = true
+    setModelosListos(false)
+    setModelosError(false)
+    loadModels()
+      .then(() => { if (active) setModelosListos(true) })
+      .catch(() => { if (active) setModelosError(true) })
+    return () => { active = false }
+  }, [enrolandoRostro])
 
   const notify = (message) => {
     setToast(message)
@@ -268,8 +281,22 @@ export default function Perfil ({ onHome, onSignOut }) {
                   <div className={`camera-frame camera-${cameraState}`} aria-label='Captura de rostro'>
                     <video ref={videoRef} autoPlay muted playsInline aria-label='Video de la cámara frontal' />
                   </div>
+                  {!modelosListos && !modelosError && (
+                    <p className='models-loading'>
+                      <span className='processing-dots'><i /><i /><i /></span>
+                      Preparando reconocimiento facial…
+                    </p>
+                  )}
+                  {modelosError && (
+                    <p className='register-photo-error'>
+                      No pudimos cargar el reconocimiento facial. Verifica tu conexión e intenta de nuevo.
+                    </p>
+                  )}
                   <div className='profile-signature-actions'>
-                    <Button onClick={enrolarRostro} disabled={capturandoRostro || cameraState !== 'live'}>
+                    <Button
+                      onClick={enrolarRostro}
+                      disabled={capturandoRostro || cameraState !== 'live' || !modelosListos}
+                    >
                       {capturandoRostro ? 'Leyendo tu rostro…' : 'Capturar rostro'}
                     </Button>
                     <Button variant='secondary' onClick={() => setEnrolandoRostro(false)}>Cancelar</Button>
