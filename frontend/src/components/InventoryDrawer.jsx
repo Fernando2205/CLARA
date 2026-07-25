@@ -2,15 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
-  ClipboardCheck,
   Database,
   MinusCircle,
   PackageCheck,
   Search,
   X,
 } from 'lucide-react'
-import { getInventory } from '../lib/api'
-import { Tangram } from './ui'
+import { useLiveInventory } from '../lib/useLiveInventory'
+import { Progress, Tangram } from './ui'
 
 const filters = [
   { value: 'todos', label: 'Todos' },
@@ -32,16 +31,16 @@ function formatNumber(value) {
 }
 
 function ItemStatus({ item }) {
-  if (item.contado_en_sesion) {
-    return <span className="inventory-status status-counted"><ClipboardCheck size={14} />Conteo físico</span>
+  if (item.countState === 'ok') {
+    return <span className="inventory-status status-ok"><CheckCircle2 size={14} />Coincide</span>
   }
-  if (item.cantidad_actual < 0) {
-    return <span className="inventory-status status-negative"><AlertTriangle size={14} />Saldo negativo</span>
+  if (item.countState === 'warn') {
+    return <span className="inventory-status status-warn"><AlertTriangle size={14} />Revisar</span>
   }
-  if (item.cantidad_actual === 0) {
-    return <span className="inventory-status status-zero"><MinusCircle size={14} />En cero</span>
+  if (item.countState === 'bad') {
+    return <span className="inventory-status status-bad"><AlertTriangle size={14} />Incongruencia</span>
   }
-  return <span className="inventory-status status-available"><CheckCircle2 size={14} />Disponible</span>
+  return <span className="inventory-status status-pending"><MinusCircle size={14} />Pendiente</span>
 }
 
 export default function InventoryDrawer({
@@ -51,12 +50,14 @@ export default function InventoryDrawer({
   warehouseLabel,
   sessionId,
 }) {
-  const [inventory, setInventory] = useState(null)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('todos')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const searchRef = useRef(null)
+  const { items: mergedItems, summary, countedTotal, loading, error, justCounted } = useLiveInventory({
+    warehouse,
+    sessionId,
+    enabled: open,
+  })
 
   useEffect(() => {
     if (!open) return undefined
@@ -68,27 +69,9 @@ export default function InventoryDrawer({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose, open])
 
-  useEffect(() => {
-    if (!open) return undefined
-    let active = true
-    setLoading(true)
-    setError('')
-    getInventory({ warehouse, sessionId })
-      .then((response) => {
-        if (active) setInventory(response)
-      })
-      .catch(() => {
-        if (active) setError('No pude cargar el inventario del servidor.')
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => { active = false }
-  }, [open, sessionId, warehouse])
-
   const visibleItems = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('es-CO')
-    return (inventory?.items || []).filter((item) => {
+    return mergedItems.filter((item) => {
       const matchesQuery = !normalized
         || item.nombre.toLocaleLowerCase('es-CO').includes(normalized)
         || String(item.sku || '').includes(normalized)
@@ -99,10 +82,9 @@ export default function InventoryDrawer({
         || (filter === 'contado' && item.contado_en_sesion)
       return matchesQuery && matchesFilter
     })
-  }, [filter, inventory, query])
+  }, [filter, mergedItems, query])
 
   if (!open) return null
-  const summary = inventory?.resumen
 
   return (
     <div className="inventory-overlay" role="presentation" onMouseDown={onClose}>
@@ -173,12 +155,18 @@ export default function InventoryDrawer({
         </div>
 
         <div className="inventory-results-meta" aria-live="polite">
-          <span>
-            {loading
-              ? 'Consultando inventario…'
-              : `Mostrando ${visibleItems.length} de ${summary?.total ?? 0} referencias`}
-          </span>
-          <span>El conteo físico tiene prioridad sobre el saldo del sistema.</span>
+          <div className="inventory-results-meta-row">
+            <span>
+              {loading
+                ? 'Consultando inventario…'
+                : `Mostrando ${visibleItems.length} de ${summary?.total ?? 0} referencias`}
+            </span>
+            <span>El conteo físico tiene prioridad sobre el saldo del sistema.</span>
+          </div>
+          <div className="inventory-progress" aria-label="Productos contados en esta sesión">
+            <span className="inventory-progress-label">Productos contados</span>
+            <Progress current={countedTotal} total={summary?.total || mergedItems.length || 1} />
+          </div>
         </div>
 
         <div className="inventory-table" role="table" aria-label="Inventario completo">
@@ -197,7 +185,11 @@ export default function InventoryDrawer({
               </div>
             )}
             {!error && !loading && visibleItems.map((item) => (
-              <article className="inventory-row" role="row" key={item.id}>
+              <article
+                className={`inventory-row inventory-row-${item.countState} ${justCounted.has(item.id) ? 'row-flash' : ''}`}
+                role="row"
+                key={item.id}
+              >
                 <span className="inventory-product" role="cell">
                   <strong>{item.nombre}</strong>
                   <small>{item.bodega}</small>

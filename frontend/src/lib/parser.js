@@ -1,5 +1,15 @@
 import { catalogUnitFromSpoken, matchCatalog, normalizeText } from './matcher'
 
+// El dictado por voz (y a veces el teclado) pega la cantidad y la unidad
+// abreviada sin espacio ("4l", "90kg", "500gr"). Sin separarlos, ese token
+// no coincide ni con un número puro ni con una palabra de unidad conocida,
+// así que se queda como si fuera parte del nombre del producto y rompe el
+// reconocimiento de "esto es solo la cantidad/unidad, sigue con el mismo
+// producto".
+function normalizePhrase(phrase) {
+  return normalizeText(phrase).replace(/(\d)([a-z]+)/g, '$1 $2')
+}
+
 const smallNumbers = {
   cero: 0, un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
   seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
@@ -25,7 +35,7 @@ const unitWords = [
   'unidades', 'unidad', 'cajas', 'caja', 'bolsas', 'bolsa', 'paquetes',
   'paquete', 'botellas', 'botella', 'kilos', 'kilo', 'kilogramos',
   'gramos', 'gramo', 'litros', 'litro', 'porciones', 'porcion',
-  'lt', 'lts', 'kg', 'kgs', 'gr', 'boteya', 'boteyas',
+  'lt', 'lts', 'kg', 'kgs', 'gr', 'boteya', 'boteyas', 'l',
 ]
 
 const removableWords = new Set([
@@ -40,6 +50,8 @@ const removableWords = new Set([
   'podria', 'podrias', 'podemos', 'ayuda', 'ayudas', 'ayudar', 'quieres',
   'porfa', 'arroba',
   'hola', 'como', 'estas',
+  'pues', 'digo', 'mejor', 'sino', 'entonces', 'este', 'osea', 'ah', 'eh',
+  'perdon', 'espera',
   ...unitWords,
   ...Object.keys(smallNumbers),
   ...Object.keys(tens),
@@ -76,7 +88,7 @@ function extractUnit(normalized) {
   if (/\bkgs?\b/.test(normalized)) return 'kilogramos'
   if (normalized.includes('gramo')) return 'gramos'
   if (/\bgr\b/.test(normalized)) return 'gramos'
-  if (normalized.includes('litro') || /\blts?\b/.test(normalized)) return 'litros'
+  if (normalized.includes('litro') || /\blts?\b/.test(normalized) || /\bl\b/.test(normalized)) return 'litros'
   if (normalized.includes('porcion')) return 'porciones'
   if (normalized.includes('caja')) return 'cajas'
   if (normalized.includes('bolsa')) return 'bolsas'
@@ -97,6 +109,22 @@ function extractProductText(normalized) {
 function isCorrectionPhrase(normalized) {
   return /(perdon|corrige|me equivoque|eran|quise decir)/.test(normalized)
     || /^no son? /.test(normalized)
+}
+
+// Frases completas (no substrings, para no confundir un nombre de producto
+// real con un "sí") que significan "confirmo esto" mientras hay un producto
+// seleccionado: deben quedarse en ese producto, nunca interpretarse como el
+// nombre de otro.
+const affirmativePhrases = new Set([
+  'si', 'sisi', 'confirmo', 'confirmar', 'confirma', 'confirmado',
+  'correcto', 'correcta', 'listo', 'lista', 'dale', 'vale', 'perfecto',
+  'ok', 'okey', 'exacto', 'esta bien', 'esta bueno', 'esta correcto',
+  'esta correcta', 'asi es', 'eso es', 'claro', 'claro que si', 'de una',
+  'todo bien', 'si esta bien', 'si es correcto', 'si confirmo',
+])
+
+export function isAffirmativePhrase(phrase) {
+  return affirmativePhrases.has(normalizeText(phrase))
 }
 
 function productKey(record) {
@@ -224,8 +252,59 @@ export function validateInventoryRecord(record, records = []) {
   return alerts
 }
 
+// Mientras hay un producto seleccionado esperando cantidad (o una corrección
+// antes de confirmar), una frase nueva que no nombra otro producto ("noventa",
+// "son 12 kilos", "mejor 20") se aplica sobre ESE mismo producto en vez de
+// pedirle a Clara que vuelva a adivinar producto + cantidad desde cero — eso
+// era lo que hacía que perdiera el producto seleccionado. Devuelve null si la
+// frase sí parece nombrar un producto (posiblemente distinto), para que el
+// llamador siga el flujo normal.
+export function tryCompletePending(phrase, pending, records = []) {
+  if (!pending || pending.type !== 'record') return null
+
+  const normalized = normalizePhrase(phrase)
+  const productText = extractProductText(normalized)
+  if (productText) return null
+
+  const quantity = extractQuantity(normalized)
+  const spokenUnit = extractUnit(normalized)
+  const state = normalized.includes('buen estado')
+    ? 'Buen estado'
+    : normalized.includes('vencid')
+      ? 'Vencido'
+      : normalized.includes('averiad')
+        ? 'Averiado'
+        : null
+
+  if (quantity == null && !spokenUnit && !state) return null
+
+  const convertsGrams = spokenUnit === 'gramos' && pending.catalogUnit === 'Kilogram'
+  const nextQuantity = quantity != null
+    ? (convertsGrams ? quantity * 0.001 : quantity)
+    : pending.quantity
+
+  const unitLabel = convertsGrams ? pending.unit : (spokenUnit || pending.spokenUnit || pending.unit)
+  const updated = {
+    ...pending,
+    phrase,
+    quantity: nextQuantity,
+    spokenUnit: convertsGrams ? pending.unit : (spokenUnit || pending.spokenUnit),
+    state: state || pending.state,
+    conversionNote: convertsGrams
+      ? `${quantity} gramos → ${nextQuantity} ${pending.unit}`
+      : pending.conversionNote,
+    spokenIntro: nextQuantity != null
+      ? `Anoté ${nextQuantity} ${unitLabel} de ${pending.name.toLowerCase()}. Confirma si está bien.`
+      : state
+        ? `Marqué ${pending.name.toLowerCase()} como ${state.toLowerCase()}. ¿Cuánto contaste?`
+        : `Entendido. ¿Cuánto contaste de ${pending.name.toLowerCase()}?`,
+  }
+  updated.alerts = validateInventoryRecord(updated, records)
+  return updated
+}
+
 export function parseInventoryPhrase(phrase, { warehouse, records = [] } = {}) {
-  const normalized = normalizeText(phrase)
+  const normalized = normalizePhrase(phrase)
   const quantity = extractQuantity(normalized)
   const spokenUnit = extractUnit(normalized)
   const state = normalized.includes('buen estado')

@@ -14,7 +14,7 @@ import RegistroCard from '../../components/RegistroCard'
 import SessionPanel from '../../components/SessionPanel'
 import { Avatar, Button, MicButton, Tangram, Toast, TopBar } from '../../components/ui'
 import { askClara, createSession } from '../../lib/api'
-import { parseInventoryPhrase, validateInventoryRecord } from '../../lib/parser'
+import { isAffirmativePhrase, parseInventoryPhrase, tryCompletePending, validateInventoryRecord } from '../../lib/parser'
 import { listenOnce, speakNatural, stopSpeaking } from '../../lib/voice'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionStore } from '../../stores/session'
@@ -34,6 +34,19 @@ const catalogUnits = {
   Kilogram: 'kilogramos',
   Liter: 'litros',
   Portion: 'porciones',
+}
+
+// Acción "afirmativa" segura por regla de alerta cuando el usuario responde
+// "confirmo" / "está bien" en vez de tocar un botón. V5 (duplicado) y V7
+// (factor de empaque) se dejan fuera a propósito: ahí un "sí" es ambiguo
+// (¿reemplazar o sumar? ¿12 o 24?) y conviene que elija explícitamente.
+const AFFIRMATIVE_ALERT_ACTIONS = {
+  V1: 'confirm-atypical',
+  V2: 'use-catalog-unit',
+  V3: 'confirm-data',
+  V4: 'acknowledge',
+  V6: 'round',
+  BODEGA: 'acknowledge',
 }
 
 function mapAlternative(item) {
@@ -149,7 +162,6 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
   const warehouse = useSessionStore((state) => state.bodega)
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
   const records = useSessionStore((state) => state.records)
-  const total = useSessionStore((state) => state.totalRefs)
   const baselineCount = useSessionStore((state) => state.baselineCount)
   const online = useSessionStore((state) => state.online)
   const toggleOnline = useSessionStore((state) => state.toggleOnline)
@@ -322,6 +334,45 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
     setInput('')
     setInterim('')
     appendMessage('user', clean, 'Tú')
+
+    // Si ya hay un producto seleccionado esperando cantidad (o una corrección
+    // antes de confirmar), nos quedamos en ese producto: no volvemos a
+    // preguntarle a Clara "qué producto es" cuando la frase solo trae la
+    // cantidad, la unidad o el estado.
+    if (pending?.type === 'record') {
+      // "Confirmo" / "está bien" mientras hay un producto seleccionado:
+      // resuelve la alerta pendiente (si la hay) o confirma el registro,
+      // pero nunca se interpreta como el nombre de otro producto.
+      if (isAffirmativePhrase(clean)) {
+        const alerts = pending.alerts || []
+        const firstAlert = alerts.find((alert) => !resolvedAlerts.has(alert.rule))
+        if (firstAlert) {
+          const actionValue = AFFIRMATIVE_ALERT_ACTIONS[firstAlert.rule]
+          const action = actionValue && firstAlert.actions?.find((item) => item.value === actionValue)
+          if (action) {
+            resolveAlert(firstAlert, action)
+          } else {
+            showToast('Elige una de las opciones para continuar con este producto.')
+          }
+        } else if (quantity != null) {
+          confirm()
+        } else {
+          showToast('Dime la cantidad antes de confirmar.')
+        }
+        setVoiceState('idle')
+        return
+      }
+
+      const completed = tryCompletePending(clean, pending, records)
+      if (completed) {
+        spokenCardSignature.current = ''
+        setPending(completed)
+        setQuantity(completed.quantity ?? null)
+        setVoiceState('idle')
+        return
+      }
+    }
+
     setVoiceState('processing')
     try {
       const response = await askClara({
@@ -769,13 +820,11 @@ export default function Captura({ onClose, onReport, onProfile, onBack, autoStar
         </section>
 
         <SessionPanel
-          records={records}
-          current={currentCount}
-          total={total}
+          warehouse={warehouse}
+          sessionId={sessionId}
           alerts={alertsResolved}
           onClose={onClose}
           onReport={onReport}
-          onOpenInventory={() => setInventoryOpen(true)}
           mobileOpen={sheetOpen}
           onMobileToggle={() => setSheetOpen((value) => !value)}
         />
