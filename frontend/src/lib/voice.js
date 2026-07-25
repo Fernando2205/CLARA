@@ -1,4 +1,4 @@
-import { getSpeechResponse, transcribeAudio } from './api'
+import { getSpeechResponse, transcribeAudio } from './api.js'
 
 let activeAudio = null
 let activeObjectUrl = null
@@ -6,6 +6,15 @@ let activeSpeechController = null
 let activeMediaSource = null
 
 const LOW_CONFIDENCE_THRESHOLD = 0.8
+const PREFERRED_SPANISH_VOICES = [
+  'Mónica',
+  'Monica',
+  'Paulina',
+  'Luciana',
+  'Google español',
+  'Microsoft Helena',
+  'Microsoft Elvira',
+]
 
 function startBackupRecorder () {
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return null
@@ -41,7 +50,7 @@ function startBackupRecorder () {
   }
 }
 
-export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError }) {
+export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError, onEnd }) {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!Recognition) {
     onError?.('Tu navegador no ofrece dictado. Puedes escribir el conteo.')
@@ -49,6 +58,8 @@ export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError }) 
   }
 
   const backup = startBackupRecorder()
+  let hadFinalResult = false
+  let stoppedByUser = false
 
   const recognition = new Recognition()
   recognition.lang = 'es-CO'
@@ -62,6 +73,7 @@ export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError }) 
       onInterim?.(text)
       return
     }
+    hadFinalResult = true
     onFinal?.(text)
     const confidence = result[0].confidence
     if (!backup) return
@@ -83,17 +95,29 @@ export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError }) 
       // Sin conexión o backend caído: nos quedamos con la transcripción local.
     })
   }
-  recognition.onerror = () => {
+  recognition.onerror = (event) => {
     backup?.discard()
-    onError?.('No pude escuchar con claridad. Inténtalo otra vez o escribe el conteo.')
+    const message = event.error === 'no-speech'
+      ? 'No escuché ninguna instrucción.'
+      : 'No pude escuchar con claridad. Inténtalo otra vez o escribe el conteo.'
+    onError?.(message, event.error)
   }
+  recognition.onend = () => onEnd?.({
+    hadFinalResult,
+    stoppedByUser,
+  })
   recognition.start()
 
   return {
     supported: true,
     stop: () => {
+      stoppedByUser = true
       backup?.discard()
-      recognition.stop()
+      try {
+        recognition.stop()
+      } catch {
+        // El navegador ya cerró este turno de escucha.
+      }
     },
   }
 }
@@ -114,6 +138,105 @@ export function stopSpeaking () {
   activeMediaSource = null
 }
 
+function waitForPlayback (audio, controller, callbacks) {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (result) => {
+      if (settled) return
+      settled = true
+      controller.signal.removeEventListener('abort', handleAbort)
+      resolve(result)
+    }
+    const handleAbort = () => finish('stopped')
+
+    controller.signal.addEventListener('abort', handleAbort, { once: true })
+    audio.onplay = () => callbacks.onStart?.('elevenlabs')
+    audio.onended = () => {
+      callbacks.onEnd?.('elevenlabs')
+      finish('elevenlabs')
+      stopSpeaking()
+    }
+    audio.onerror = () => {
+      if (!controller.signal.aborted) callbacks.onError?.()
+      finish(controller.signal.aborted ? 'stopped' : 'unavailable')
+      stopSpeaking()
+    }
+  })
+}
+
+async function getSpanishVoice () {
+  const synthesis = window.speechSynthesis
+  if (!synthesis?.getVoices) return null
+  let voices = synthesis.getVoices()
+  if (!voices.length) {
+    voices = await new Promise((resolve) => {
+      const timer = window.setTimeout(() => resolve(synthesis.getVoices()), 600)
+      synthesis.addEventListener?.('voiceschanged', () => {
+        window.clearTimeout(timer)
+        resolve(synthesis.getVoices())
+      }, { once: true })
+    })
+  }
+  const spanishVoices = voices.filter((voice) => voice.lang?.toLowerCase().startsWith('es'))
+  return spanishVoices.sort((left, right) => {
+    const score = (voice) => {
+      const preferredIndex = PREFERRED_SPANISH_VOICES.findIndex((name) => (
+        voice.name.toLowerCase().includes(name.toLowerCase())
+      ))
+      return (
+        (voice.lang?.toLowerCase() === 'es-co' ? 100 : 0) +
+        (preferredIndex >= 0 ? 80 - preferredIndex : 0) +
+        (voice.localService ? 5 : 0)
+      )
+    }
+    return score(right) - score(left)
+  })[0] || voices[0] || null
+}
+
+async function speakWithDeviceVoice (text, controller, callbacks) {
+  const synthesis = window.speechSynthesis
+  const Utterance = window.SpeechSynthesisUtterance
+  if (!synthesis?.speak || !Utterance || controller.signal.aborted) {
+    callbacks.onError?.()
+    return 'unavailable'
+  }
+
+  const voice = await getSpanishVoice()
+  if (controller.signal.aborted) return 'stopped'
+  return await new Promise((resolve) => {
+    let settled = false
+    const utterance = new Utterance(text)
+    const finish = (result) => {
+      if (settled) return
+      settled = true
+      controller.signal.removeEventListener('abort', handleAbort)
+      resolve(result)
+    }
+    const handleAbort = () => {
+      synthesis.cancel()
+      finish('stopped')
+    }
+
+    utterance.lang = voice?.lang || 'es-CO'
+    utterance.voice = voice
+    utterance.rate = 1.02
+    utterance.pitch = 0.96
+    utterance.volume = 1
+    utterance.onstart = () => callbacks.onStart?.('device')
+    utterance.onend = () => {
+      callbacks.onEnd?.('device')
+      finish('device')
+    }
+    utterance.onerror = () => {
+      if (!controller.signal.aborted) callbacks.onError?.()
+      finish(controller.signal.aborted ? 'stopped' : 'unavailable')
+    }
+    controller.signal.addEventListener('abort', handleAbort, { once: true })
+    synthesis.cancel()
+    synthesis.speak(utterance)
+  })
+}
+
 export async function speakNatural (text, callbacks = {}) {
   stopSpeaking()
   const controller = new AbortController()
@@ -130,32 +253,15 @@ export async function speakNatural (text, callbacks = {}) {
       if (controller.signal.aborted) return 'stopped'
       activeObjectUrl = URL.createObjectURL(audioBlob)
       activeAudio = new Audio(activeObjectUrl)
-      activeAudio.onplay = () => callbacks.onStart?.('elevenlabs')
-      activeAudio.onended = () => {
-        callbacks.onEnd?.('elevenlabs')
-        stopSpeaking()
-      }
-      activeAudio.onerror = () => {
-        stopSpeaking()
-        callbacks.onError?.()
-      }
+      const playbackFinished = waitForPlayback(activeAudio, controller, callbacks)
       await activeAudio.play()
-      return 'elevenlabs'
+      return await playbackFinished
     }
 
     activeMediaSource = new MediaSource()
     activeObjectUrl = URL.createObjectURL(activeMediaSource)
     activeAudio = new Audio(activeObjectUrl)
-    activeAudio.onplay = () => callbacks.onStart?.('elevenlabs')
-    activeAudio.onended = () => {
-      callbacks.onEnd?.('elevenlabs')
-      stopSpeaking()
-    }
-    activeAudio.onerror = () => {
-      if (controller.signal.aborted) return
-      stopSpeaking()
-      callbacks.onError?.()
-    }
+    const playbackFinished = waitForPlayback(activeAudio, controller, callbacks)
 
     await new Promise((resolve, reject) => {
       activeMediaSource.addEventListener('sourceopen', resolve, { once: true })
@@ -195,10 +301,10 @@ export async function speakNatural (text, callbacks = {}) {
     if (activeMediaSource.readyState === 'open' && !sourceBuffer.updating) {
       activeMediaSource.endOfStream()
     }
-    return 'elevenlabs'
+    if (!started) throw new Error('La respuesta de voz llegó vacía.')
+    return await playbackFinished
   } catch {
     if (controller.signal.aborted) return 'stopped'
-    callbacks.onError?.()
-    return 'unavailable'
+    return await speakWithDeviceVoice(text, controller, callbacks)
   }
 }

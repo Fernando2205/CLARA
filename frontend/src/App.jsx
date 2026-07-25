@@ -106,7 +106,11 @@ export default function App () {
             />
           )}
           {!signingOut && screen === 'mapa' && (
-            <MapaBodega onBack={() => go('bodega', 'back')} onProfile={openProfile} />
+            <MapaBodega
+              onBack={() => go('bodega', 'back')}
+              onProfile={openProfile}
+              onStart={() => go('preconteo')}
+            />
           )}
           {!signingOut && screen === 'preconteo' && (
             <PreConteo

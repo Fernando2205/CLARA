@@ -1,4 +1,13 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+const API_URL = (import.meta.env?.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+
+export class ApiError extends Error {
+  constructor (message, status, body = null) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.body = body
+  }
+}
 
 async function apiFetch (path, options = {}, timeoutMs = 3000) {
   const controller = new AbortController()
@@ -14,7 +23,10 @@ async function apiFetch (path, options = {}, timeoutMs = 3000) {
     })
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
-      throw new Error(body.detail || `Error ${response.status}`)
+      const detail = typeof body.detail === 'string'
+        ? body.detail
+        : body.detail?.message || `Error ${response.status}`
+      throw new ApiError(detail, response.status, body)
     }
     return response.json()
   } finally {
@@ -33,7 +45,10 @@ async function apiFetchForm (path, formData, timeoutMs = 8000) {
     })
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
-      throw new Error(body.detail || `Error ${response.status}`)
+      const detail = typeof body.detail === 'string'
+        ? body.detail
+        : body.detail?.message || `Error ${response.status}`
+      throw new ApiError(detail, response.status, body)
     }
     return response.json()
   } finally {

@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS sesiones (
     fin TEXT,
     firmada INTEGER NOT NULL DEFAULT 0,
     hash_firma TEXT,
+    inventario_aplicado INTEGER NOT NULL DEFAULT 0,
+    aplicado_en TEXT,
     FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
 );
 
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS registros (
     confianza REAL NOT NULL DEFAULT 1,
     alertas_json TEXT NOT NULL DEFAULT '[]',
     corregido INTEGER NOT NULL DEFAULT 0,
+    stock_sistema_antes REAL,
     timestamp TEXT NOT NULL,
     FOREIGN KEY(sesion_id) REFERENCES sesiones(id),
     FOREIGN KEY(articulo_id) REFERENCES articulos(id)
@@ -81,6 +84,15 @@ USUARIOS_NEW_COLUMNS = {
     "correo": "TEXT",
 }
 
+SESIONES_NEW_COLUMNS = {
+    "inventario_aplicado": "INTEGER NOT NULL DEFAULT 0",
+    "aplicado_en": "TEXT",
+}
+
+REGISTROS_NEW_COLUMNS = {
+    "stock_sistema_antes": "REAL",
+}
+
 
 def migrate_db(connection: sqlite3.Connection) -> None:
     existing = {row["name"] for row in connection.execute("PRAGMA table_info(usuarios)")}
@@ -94,6 +106,28 @@ def migrate_db(connection: sqlite3.Connection) -> None:
     connection.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_correo "
         "ON usuarios(correo) WHERE correo IS NOT NULL"
+    )
+    session_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(sesiones)")
+    }
+    for column, column_type in SESIONES_NEW_COLUMNS.items():
+        if column not in session_columns:
+            connection.execute(f"ALTER TABLE sesiones ADD COLUMN {column} {column_type}")
+    record_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(registros)")
+    }
+    for column, column_type in REGISTROS_NEW_COLUMNS.items():
+        if column not in record_columns:
+            connection.execute(f"ALTER TABLE registros ADD COLUMN {column} {column_type}")
+    connection.execute(
+        """
+        UPDATE registros
+        SET stock_sistema_antes = (
+            SELECT a.stock_sistema FROM articulos a
+            WHERE a.id = registros.articulo_id
+        )
+        WHERE stock_sistema_antes IS NULL
+        """
     )
 
 

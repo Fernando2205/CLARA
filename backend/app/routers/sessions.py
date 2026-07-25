@@ -72,7 +72,7 @@ def list_sessions(
 ) -> list[SessionHistoryItem]:
     rows = connection.execute(
         """
-        SELECT s.id, s.bodega, s.inicio, s.fin,
+        SELECT s.id, s.bodega, s.inicio, s.fin, s.inventario_aplicado,
                COUNT(r.id) AS contadas,
                COALESCE(SUM(r.corregido), 0) AS corregidos
         FROM sesiones s
@@ -94,6 +94,7 @@ def list_sessions(
             contadas=row["contadas"],
             tiempo_min=round((end - start).total_seconds() / 60, 1),
             corregidos=row["corregidos"],
+            inventario_aplicado=bool(row["inventario_aplicado"]),
         ))
     return items
 
@@ -110,23 +111,71 @@ def save_records(
     created: list[dict] = []
     for record in records:
         article = connection.execute(
-            "SELECT id FROM articulos WHERE id = ?", (record.articulo_id,)
+            "SELECT id, bodega, unidad, stock_sistema FROM articulos WHERE id = ?",
+            (record.articulo_id,),
         ).fetchone()
         if not article:
             raise HTTPException(
                 status_code=404, detail=f"Artículo {record.articulo_id} no encontrado"
             )
+        if article["bodega"] != session["bodega"]:
+            raise HTTPException(
+                status_code=409,
+                detail="El artículo no pertenece a la bodega de esta sesión",
+            )
+        if article["unidad"] != record.unidad:
+            raise HTTPException(
+                status_code=409,
+                detail="La unidad no coincide con la unidad del catálogo",
+            )
+        if record.corregido:
+            current = connection.execute(
+                """
+                SELECT id, stock_sistema_antes FROM registros
+                WHERE sesion_id = ? AND articulo_id = ?
+                ORDER BY id DESC LIMIT 1
+                """,
+                (session_id, record.articulo_id),
+            ).fetchone()
+            if current:
+                connection.execute(
+                    """
+                    UPDATE registros
+                    SET cantidad_fisica = ?, unidad = ?, estado_producto = ?,
+                        confianza = ?, alertas_json = ?, corregido = 1,
+                        stock_sistema_antes = COALESCE(stock_sistema_antes, ?),
+                        timestamp = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        record.cantidad_fisica,
+                        record.unidad,
+                        record.estado_producto,
+                        record.confianza,
+                        json.dumps(record.alertas, ensure_ascii=False),
+                        article["stock_sistema"],
+                        now_iso(),
+                        current["id"],
+                    ),
+                )
+                created.append({
+                    "id": current["id"],
+                    **record.model_dump(),
+                    "actualizado": True,
+                })
+                continue
         cursor = connection.execute(
             """
             INSERT INTO registros
                 (sesion_id, articulo_id, cantidad_fisica, unidad, estado_producto,
-                 confianza, alertas_json, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                 confianza, alertas_json, corregido, stock_sistema_antes, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 session_id, record.articulo_id, record.cantidad_fisica, record.unidad,
                 record.estado_producto, record.confianza,
-                json.dumps(record.alertas, ensure_ascii=False), now_iso(),
+                json.dumps(record.alertas, ensure_ascii=False),
+                int(record.corregido), article["stock_sistema"], now_iso(),
             ),
         )
         created.append({"id": cursor.lastrowid, **record.model_dump()})
@@ -175,9 +224,21 @@ def sign_session(
     user = verify_credentials(connection, request.usuario, request.password)
     if not user or user["id"] != session["usuario_id"]:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    connection.execute(
+        """
+        UPDATE registros
+        SET stock_sistema_antes = (
+            SELECT a.stock_sistema FROM articulos a
+            WHERE a.id = registros.articulo_id
+        )
+        WHERE sesion_id = ? AND stock_sistema_antes IS NULL
+        """,
+        (session_id,),
+    )
     records = connection.execute(
         """
-        SELECT articulo_id, cantidad_fisica, unidad, corregido, timestamp
+        SELECT articulo_id, cantidad_fisica, unidad, corregido,
+               stock_sistema_antes, timestamp
         FROM registros WHERE sesion_id = ? ORDER BY id
         """,
         (session_id,),
@@ -185,12 +246,53 @@ def sign_session(
     canonical = json.dumps([dict(row) for row in records], sort_keys=True, ensure_ascii=False)
     signature_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     finished = now_iso()
+    latest_records = connection.execute(
+        """
+        SELECT r.articulo_id, r.cantidad_fisica
+        FROM registros r
+        WHERE r.sesion_id = ?
+          AND r.id = (
+              SELECT MAX(rr.id) FROM registros rr
+              WHERE rr.sesion_id = r.sesion_id
+                AND rr.articulo_id = r.articulo_id
+          )
+        ORDER BY r.articulo_id
+        """,
+        (session_id,),
+    ).fetchall()
+    for record in latest_records:
+        connection.execute(
+            """
+            UPDATE articulos
+            SET stock_sistema = ?
+            WHERE id = ? AND bodega = ?
+            """,
+            (
+                record["cantidad_fisica"],
+                record["articulo_id"],
+                session["bodega"],
+            ),
+        )
     connection.execute(
-        "UPDATE sesiones SET fin = ?, firmada = 1, hash_firma = ? WHERE id = ?",
-        (finished, signature_hash, session_id),
+        """
+        UPDATE sesiones
+        SET fin = ?, firmada = 1, hash_firma = ?,
+            inventario_aplicado = 1, aplicado_en = ?
+        WHERE id = ?
+        """,
+        (finished, signature_hash, finished, session_id),
     )
     connection.commit()
-    return {"firmada": True, "fin": finished, "hash_firma": signature_hash}
+    return {
+        "firmada": True,
+        "fin": finished,
+        "hash_firma": signature_hash,
+        "inventario_maestro": {
+            "aplicado": True,
+            "articulos_actualizados": len(latest_records),
+            "aplicado_en": finished,
+        },
+    }
 
 
 @router.get("/{session_id}/resumen")
@@ -201,7 +303,8 @@ def session_summary(
     session = get_session(connection, session_id)
     records = connection.execute(
         """
-        SELECT r.*, a.articulo, a.stock_sistema
+        SELECT r.*, a.articulo,
+               COALESCE(r.stock_sistema_antes, a.stock_sistema) AS stock_sistema
         FROM registros r JOIN articulos a ON a.id = r.articulo_id
         WHERE r.sesion_id = ? ORDER BY r.id
         """,
@@ -229,4 +332,6 @@ def session_summary(
         "con_alerta": sum(bool(json.loads(row["alertas_json"])) for row in records),
         "diferencias": differences,
         "firmada": bool(session["firmada"]),
+        "inventario_aplicado": bool(session["inventario_aplicado"]),
+        "aplicado_en": session["aplicado_en"],
     }

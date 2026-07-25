@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
+  AudioLines,
   Keyboard,
   PackageSearch,
   Repeat2,
@@ -13,7 +14,7 @@ import InventoryDrawer from '../../components/InventoryDrawer'
 import RegistroCard from '../../components/RegistroCard'
 import SessionPanel from '../../components/SessionPanel'
 import { Avatar, Button, MicButton, Tangram, Toast, TopBar } from '../../components/ui'
-import { askClara, createSession } from '../../lib/api'
+import { askClara, createSession, getSessionSummary } from '../../lib/api'
 import { isAffirmativePhrase, parseInventoryPhrase, tryCompletePending, validateInventoryRecord } from '../../lib/parser'
 import { listenOnce, speakNatural, stopSpeaking } from '../../lib/voice'
 import { useAuthStore } from '../../stores/auth'
@@ -171,7 +172,7 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
   const alertsResolved = useSessionStore((state) => state.alertsResolved)
   const mode = useSessionStore((state) => state.mode)
   const sessionId = useSessionStore((state) => state.sessionId)
-  const setSessionId = useSessionStore((state) => state.setSessionId)
+  const startSession = useSessionStore((state) => state.startSession)
   const [input, setInput] = useState('')
   const [interim, setInterim] = useState('')
   const [voiceState, setVoiceState] = useState('idle')
@@ -199,17 +200,29 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
   const currentCount = baselineCount + records.length
 
   useEffect(() => {
-    if (!online || sessionId) return undefined
+    if (!online || !userId) return undefined
     let active = true
-    createSession({ userId, warehouse, mode })
-      .then((created) => {
-        if (active) setSessionId(created.sesion_id)
-      })
-      .catch(() => {
+    const ensureMutableSession = async () => {
+      if (sessionId) {
+        try {
+          const summary = await getSessionSummary(sessionId)
+          if (!summary.firmada) return
+        } catch (error) {
+          // Una caída temporal no debe crear sesiones duplicadas. Solo se
+          // reemplaza una sesión cuando sabemos que está cerrada o ya no existe.
+          if (error?.status !== 404) return
+        }
+      }
+      try {
+        const created = await createSession({ userId, warehouse, mode })
+        if (active) startSession(created.sesion_id)
+      } catch {
         // El modo local sigue disponible y se reintentará al volver a entrar.
-      })
+      }
+    }
+    ensureMutableSession()
     return () => { active = false }
-  }, [mode, online, sessionId, setSessionId, userId, warehouse])
+  }, [mode, online, sessionId, startSession, userId, warehouse])
 
   useEffect(() => {
     const panel = conversationScroll.current
@@ -361,7 +374,7 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
             showToast('Elige una de las opciones para continuar con este producto.')
           }
         } else if (quantity != null) {
-          confirm()
+          await confirm()
         } else {
           showToast('Dime la cantidad antes de confirmar.')
         }
@@ -545,12 +558,23 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
     setDuplicateAction(null)
   }
 
-  const confirm = () => {
+  const confirm = async () => {
     const resolvedAlertCount = pending.alerts.filter((alert) => resolvedAlerts.has(alert.rule)).length
     const duplicateAlert = pending.alerts.find((alert) => alert.rule === 'V5')
+    const reportRejectedSave = (result) => {
+      if (result.status !== 'rejected') return false
+      appendMessage(
+        'assistant',
+        `No se guardó · ${pending.name}`,
+        `CLARA · ${result.error || 'el servidor rechazó el registro'}`
+      )
+      speakResponse('No pude guardar ese cambio. El conteo anterior se mantiene.')
+      showToast(result.error || 'El servidor rechazó el registro.')
+      return true
+    }
 
     if (pending.isCorrection) {
-      updateRecord(pending.id, { quantity, resolvedAlertCount }, sessionId && pending.articleId
+      const saving = updateRecord(pending.id, { quantity, resolvedAlertCount }, sessionId && pending.articleId
         ? {
             articulo_id: pending.articleId,
             cantidad_fisica: Number(quantity),
@@ -562,17 +586,27 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
         : null)
       const visibleMessage = `Corrección guardada · ${pending.name} · ${quantity} ${pending.unit}`
       const spokenMessage = `Actualicé ${pending.name.toLowerCase()} a ${quantity} ${pending.unit}.`
-      appendMessage('assistant', visibleMessage, 'CLARA · actualizado')
-      speakResponse(spokenMessage)
       clearPending()
-      showToast('Corrección guardada en la sesión.')
+      const result = await saving
+      if (reportRejectedSave(result)) return
+      appendMessage(
+        'assistant',
+        visibleMessage,
+        result.status === 'synced' ? 'CLARA · sincronizada' : 'CLARA · pendiente de sincronización'
+      )
+      speakResponse(spokenMessage)
+      showToast(
+        result.status === 'synced'
+          ? 'Corrección sincronizada con el servidor.'
+          : 'Corrección guardada localmente. Se sincronizará antes de firmar.'
+      )
       return
     }
 
     if (duplicateAlert && duplicateAction) {
       const previous = records.find((record) => record.id === duplicateAlert.duplicateId)
       const nextQuantity = duplicateAction === 'sum' ? Number(previous.quantity) + Number(quantity) : quantity
-      updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount }, sessionId && pending.articleId
+      const saving = updateRecord(previous.id, { quantity: nextQuantity, resolvedAlertCount }, sessionId && pending.articleId
         ? {
             articulo_id: pending.articleId,
             cantidad_fisica: Number(nextQuantity),
@@ -586,14 +620,24 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
       const spokenMessage = duplicateAction === 'sum'
         ? `${pending.name} queda en ${nextQuantity} ${pending.unit}, sumando ambos conteos.`
         : `Reemplacé el conteo. ${pending.name} queda en ${nextQuantity} ${pending.unit}.`
-      appendMessage('assistant', visibleMessage, 'CLARA · doble conteo resuelto')
-      speakResponse(spokenMessage)
       clearPending()
-      showToast('Doble conteo resuelto.')
+      const result = await saving
+      if (reportRejectedSave(result)) return
+      appendMessage(
+        'assistant',
+        visibleMessage,
+        result.status === 'synced' ? 'CLARA · sincronizado' : 'CLARA · pendiente de sincronización'
+      )
+      speakResponse(spokenMessage)
+      showToast(
+        result.status === 'synced'
+          ? 'Doble conteo resuelto y sincronizado.'
+          : 'Doble conteo resuelto localmente. Falta sincronizar.'
+      )
       return
     }
 
-    addRecord({
+    const saving = addRecord({
       articleId: pending.articleId,
       name: pending.name,
       quantity,
@@ -617,10 +661,20 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
       : null)
     const visibleMessage = `Guardado · ${pending.name} · ${quantity} ${pending.unit}`
     const spokenMessage = `Guardé ${quantity} ${pending.unit} de ${pending.name.toLowerCase()}.`
-    appendMessage('assistant', visibleMessage, online ? 'CLARA · sincronizado' : 'CLARA · guardado local')
-    speakResponse(spokenMessage)
     clearPending()
-    showToast(online ? 'Registro confirmado y sincronizado.' : 'Registro guardado en el dispositivo.')
+    const result = await saving
+    if (reportRejectedSave(result)) return
+    appendMessage(
+      'assistant',
+      visibleMessage,
+      result.status === 'synced' ? 'CLARA · sincronizado' : 'CLARA · pendiente de sincronización'
+    )
+    speakResponse(spokenMessage)
+    showToast(
+      result.status === 'synced'
+        ? 'Registro confirmado y sincronizado.'
+        : 'Registro guardado localmente. Se sincronizará antes de firmar.'
+    )
   }
 
   const handleNetwork = () => {
@@ -652,14 +706,14 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
           <div className='conversation-scroll' ref={conversationScroll}>
             <div className='capture-context'>
               <div>
-                <span className='eyebrow'>Toma física · Asistente conversacional</span>
-                <h1>Cuenta, pregunta y confirma hablando</h1>
+                <span className='eyebrow'>Registro por voz</span>
+                <h1>Dicta cantidades o consulta existencias</h1>
               </div>
               <div className='capture-context-actions'>
                 {autoListen && (
                   <button className='auto-listen-chip' onClick={stopContinuousListening} title='Detener escucha continua'>
-                    <span className='auto-listen-dot' aria-hidden='true' />
-                    <span>Escucha continua</span>
+                    <AudioLines size={16} aria-hidden='true' />
+                    <span>Detener escucha</span>
                   </button>
                 )}
                 <button

@@ -66,6 +66,7 @@ def test_inventory_session_flow_and_reports():
         assert body["origen"] in {"local", "openai"}
 
         article_id = body["articulo"]["id"]
+        original_stock = body["articulo"]["stock_sistema"]
         validation = client.post(
             "/validate",
             json={
@@ -103,6 +104,8 @@ def test_inventory_session_flow_and_reports():
         assert summary.status_code == 200
         assert summary.json()["contadas"] == 1
         assert summary.json()["corregidos"] == 1
+        assert summary.json()["diferencias"][0]["sistema"] == original_stock
+        assert summary.json()["diferencias"][0]["fisico"] == 13
 
         signed = client.post(
             f"/sessions/{session_id}/firmar",
@@ -110,6 +113,28 @@ def test_inventory_session_flow_and_reports():
         )
         assert signed.status_code == 200
         assert len(signed.json()["hash_firma"]) == 64
+        assert signed.json()["inventario_maestro"] == {
+            "aplicado": True,
+            "articulos_actualizados": 1,
+            "aplicado_en": signed.json()["fin"],
+        }
+
+        global_inventory = client.get(
+            "/inventory",
+            params={"bodega": WAREHOUSE},
+        ).json()
+        global_item = next(
+            item for item in global_inventory["items"]
+            if item["id"] == article_id
+        )
+        assert global_item["stock_sistema"] == 13
+        assert global_item["cantidad_actual"] == 13
+
+        signed_summary = client.get(f"/sessions/{session_id}/resumen").json()
+        assert signed_summary["inventario_aplicado"] is True
+        assert signed_summary["diferencias"][0]["sistema"] == original_stock
+        assert signed_summary["diferencias"][0]["fisico"] == 13
+        assert signed_summary["diferencias"][0]["delta"] == 13 - original_stock
 
         history = client.get("/sessions", params={"usuario_id": 1})
         assert history.status_code == 200
@@ -117,6 +142,7 @@ def test_inventory_session_flow_and_reports():
         assert entry["bodega"] == WAREHOUSE
         assert entry["contadas"] == 1
         assert entry["corregidos"] == 1
+        assert entry["inventario_aplicado"] is True
 
         immutable = client.patch(
             f"/sessions/{session_id}/registros/{record_id}",
@@ -155,6 +181,54 @@ def test_inventory_session_flow_and_reports():
         # estándar de URL); %2e%2e sí llega intacto y debe rechazarlo el guard.
         traversal = client.delete("/report/%2e%2e")
         assert traversal.status_code == 400
+
+
+def test_conversational_correction_updates_latest_count_without_duplicates():
+    with TestClient(app) as client:
+        created = client.post(
+            "/sessions",
+            json={"usuario_id": 1, "bodega": WAREHOUSE, "modo": "toma"},
+        )
+        session_id = created.json()["sesion_id"]
+        article = client.post(
+            "/extract",
+            json={"frase": "doce litros de aceite de ajonjoli", "bodega": WAREHOUSE},
+        ).json()["articulo"]
+
+        first = client.post(
+            f"/sessions/{session_id}/registros",
+            json={
+                "articulo_id": article["id"],
+                "cantidad_fisica": 1000,
+                "unidad": article["unidad"],
+            },
+        )
+        assert first.status_code == 200
+
+        corrected = client.post(
+            f"/sessions/{session_id}/registros",
+            json={
+                "articulo_id": article["id"],
+                "cantidad_fisica": 10,
+                "unidad": article["unidad"],
+                "corregido": True,
+            },
+        )
+        assert corrected.status_code == 200
+        assert corrected.json()["registros"][0]["actualizado"] is True
+
+        inventory = client.get(
+            "/inventory",
+            params={"bodega": WAREHOUSE, "sesion_id": session_id},
+        ).json()
+        item = next(row for row in inventory["items"] if row["id"] == article["id"])
+        assert item["cantidad_actual"] == 10
+        assert item["contado_en_sesion"] is True
+        assert item["corregido"] is True
+
+        summary = client.get(f"/sessions/{session_id}/resumen").json()
+        assert summary["contadas"] == 1
+        assert summary["corregidos"] == 1
 
 
 def test_validate_integer_rule():
@@ -222,8 +296,17 @@ def test_conversational_queries_and_complete_inventory():
         assert result["resumen"]["total"] > 100
         assert {
             "id", "sku", "nombre", "unidad", "stock_sistema",
-            "cantidad_actual", "fuente", "contado_en_sesion",
+            "hist_min", "hist_max", "cantidad_actual", "fuente",
+            "contado_en_sesion",
         }.issubset(result["items"][0])
+        historical_item = next(
+            item for item in result["items"]
+            if item["stock_sistema"] > 0
+        )
+        assert historical_item["hist_min"] is not None
+        assert historical_item["hist_max"] is not None
+        assert historical_item["hist_min"] <= historical_item["stock_sistema"]
+        assert historical_item["hist_max"] >= historical_item["stock_sistema"]
 
         capture = client.post(
             "/assistant",

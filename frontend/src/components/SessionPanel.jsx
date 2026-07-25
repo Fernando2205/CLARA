@@ -46,17 +46,16 @@ export default function SessionPanel ({
       <button className='mobile-sheet-handle' onClick={onMobileToggle} aria-label='Abrir lista de productos'>
         <span />
         <div>
-          <strong>Toma en curso</strong>
+          <strong>Inventario de la bodega</strong>
           <span>{countedTotal} de {total || '—'} productos</span>
         </div>
         <ChevronDown size={20} />
       </button>
       <div className='session-panel-head'>
         <div>
-          <span className='eyebrow'>Inventario en vivo</span>
-          <h2>Toma en curso</h2>
+          <span className='eyebrow'>Conteo físico</span>
+          <h2>Inventario de la bodega</h2>
         </div>
-        <span className='live-dot'>En vivo</span>
       </div>
       <Progress current={countedTotal} total={total || 1} alerts={alerts} />
 

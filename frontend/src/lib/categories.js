@@ -49,6 +49,12 @@ export const CATEGORY_DEFS = [
 ]
 
 const CATEGORY_BY_ID = Object.fromEntries(CATEGORY_DEFS.map((cat) => [cat.id, cat]))
+const DRY_GOODS_OVERRIDES = [
+  'ajo granulado',
+  'ajo en polvo',
+  'cebolla en polvo',
+  'pimenton en polvo',
+]
 
 export function categoryLabel (id) {
   return CATEGORY_BY_ID[id]?.label || 'Otros'
@@ -56,6 +62,7 @@ export function categoryLabel (id) {
 
 export function categorize (name) {
   const normalized = ` ${normalizeText(name)} `
+  if (DRY_GOODS_OVERRIDES.some((product) => normalized.includes(product))) return 'granos'
   for (const cat of CATEGORY_DEFS) {
     if (cat.id === 'general') continue
     if (cat.keywords.some((keyword) => normalized.includes(keyword))) return cat.id

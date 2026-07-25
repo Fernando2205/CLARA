@@ -21,6 +21,9 @@ export default function ResumenFirma ({ onBack, onContinue, onProfile }) {
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
   const sessionId = useSessionStore((state) => state.sessionId)
   const setSignature = useSessionStore((state) => state.setSignature)
+  const pendingSyncCount = useSessionStore((state) => state.pendingSyncCount)
+  const flushPendientesSync = useSessionStore((state) => state.flushPendientesSync)
+  const markInventoryApplied = useSessionStore((state) => state.markInventoryApplied)
   const user = useAuthStore((state) => state.user)
   const login = useAuthStore((state) => state.login)
   const [summary, setSummary] = useState(null)
@@ -78,11 +81,22 @@ export default function ResumenFirma ({ onBack, onContinue, onProfile }) {
     setSigning(true)
     setSignError('')
     try {
+      const remaining = await flushPendientesSync(sessionId)
+      if (remaining > 0) {
+        setSignError(
+          `Aún hay ${remaining} ${remaining === 1 ? 'registro pendiente' : 'registros pendientes'} de sincronización. Revisa la conexión antes de firmar.`
+        )
+        setPin('')
+        return
+      }
       const result = await signSession(sessionId, { usuario: user.nombre, password: pin })
       setFirmaStamped(false)
       setSigned(result)
       setSignature(result)
-      notify('Toma firmada. El acta quedó sellada y ya no puede modificarse.')
+      if (result.inventario_maestro?.aplicado) markInventoryApplied(sessionId)
+      notify(
+        `Toma firmada. ${result.inventario_maestro?.articulos_actualizados || 0} artículos aplicados al inventario maestro.`
+      )
     } catch (err) {
       setSignError(err.message === 'Credenciales inválidas' ? 'PIN incorrecto. Intenta de nuevo.' : 'No pudimos firmar la toma. Intenta de nuevo.')
       setPin('')
@@ -184,6 +198,21 @@ export default function ResumenFirma ({ onBack, onContinue, onProfile }) {
                   : (
                     <>
                       <p>Al firmar confirmas que revisaste las cantidades. La sesión quedará cerrada y no podrá editarse.</p>
+                      <div className={`summary-sync-status ${pendingSyncCount > 0 ? 'is-pending' : 'is-ready'}`}>
+                        {pendingSyncCount > 0 ? <Clock3 size={16} /> : <Check size={16} />}
+                        <span>
+                          <strong>
+                            {pendingSyncCount > 0
+                              ? `${pendingSyncCount} pendientes de sincronización`
+                              : 'Registros listos para aplicar'}
+                          </strong>
+                          <small>
+                            {pendingSyncCount > 0
+                              ? 'CLARA intentará subirlos antes de aceptar la firma.'
+                              : 'La firma actualizará el inventario maestro para todos.'}
+                          </small>
+                        </span>
+                      </div>
                       <form onSubmit={submit} className='sign-form'>
                         <div className='sign-identity'>
                           <span>Firmando como</span>
@@ -199,7 +228,7 @@ export default function ResumenFirma ({ onBack, onContinue, onProfile }) {
                           {signing ? 'Firmando…' : 'Firmar toma'}
                         </Button>
                       </form>
-                      <p className='signature-legal'><ShieldCheck size={15} /> Se generará un sello de integridad con fecha y hora.</p>
+                      <p className='signature-legal'><ShieldCheck size={15} /> Se guardará el saldo anterior, se aplicará el conteo físico y se generará un sello de integridad.</p>
                     </>
                     )}
               </>
@@ -224,6 +253,10 @@ export default function ResumenFirma ({ onBack, onContinue, onProfile }) {
                   <span>Responsable</span><strong>{user.nombre}</strong>
                   <span>Fecha y hora</span><strong>{new Date(signed.fin).toLocaleString('es-CO')}</strong>
                   <span>Sello</span><strong className='signature-hash'>{signed.hash_firma.slice(0, 16)}…</strong>
+                  <span>Inventario maestro</span>
+                  <strong>
+                    {signed.inventario_maestro?.articulos_actualizados || 0} artículos aplicados
+                  </strong>
                 </div>
                 <Button onClick={onContinue} icon={ArrowRight}>Generar reporte</Button>
               </div>
