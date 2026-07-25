@@ -448,7 +448,7 @@ p { font-size: 15px; line-height: 1.55; }
 }
 .auth-shell > .brand svg {
   width: clamp(38px, 2.8vw, 45px);
-  height: clamp(38px, 2.8vw, 45px);
+  height: auto;
 }
 .face-stage,
 .pin-stage {
@@ -1588,7 +1588,7 @@ p { font-size: 15px; line-height: 1.55; }
   .auth-screen { min-height: 100svh; padding: 26px 16px 32px; place-items: start center; overflow-y: auto; }
   .auth-shell { width: min(100%, 520px); }
   .auth-shell > .brand { font-size: 25px; }
-  .auth-shell > .brand svg { width: 36px; height: 36px; }
+  .auth-shell > .brand svg { width: 36px; height: auto; }
   .face-stage { margin-top: clamp(38px, 7vh, 66px); }
   .camera-frame { width: min(218px, 56vw); height: min(218px, 56vw); }
   .face-status { margin: 7px 0 13px; font-size: 13px; }

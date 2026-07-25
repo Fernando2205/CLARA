@@ -24,19 +24,20 @@ export function CategoryIcon ({ id, size = 15 }) {
 }
 
 export function Tangram ({ size = 32, className = '' }) {
+  const height = Math.round(size * (80.6 / 62.4))
   return (
     <svg
       aria-hidden='true'
       className={className}
-      height={size}
-      viewBox='0 0 48 48'
+      height={height}
+      viewBox='0 0 62.4 80.6'
       width={size}
     >
-      <path d='M5 25 20 10v30Z' fill='#FFD000' />
-      <path d='m20 10 12 12-12 12Z' fill='#EBBF00' />
-      <path d='m32 22 10-10v18Z' fill='#FFD000' />
-      <path d='m20 34 8-8 8 8-8 8Z' fill='#F3C600' />
-      <path d='m5 25 8 8-8 8Z' fill='#0067B1' />
+      <path
+        fill='#FFD000'
+        fillRule='evenodd'
+        d='M26.8,60.8 L10.1,60.8 L9.4,61.6 L9.4,78.0 L9.9,78.5 L10.4,78.5 L26.8,62.1 Z M27.8,41.3 L27.3,40.8 L26.5,41.1 L10.4,57.2 L10.4,58.2 L27.3,58.2 L27.8,57.2 Z M34.1,34.8 L32.8,34.8 L30.2,37.4 L29.9,38.5 L30.4,57.7 L31.2,57.7 L43.4,45.2 L43.4,44.2 Z M2.1,26.3 L2.1,27.3 L18.2,43.4 L19.2,43.4 L19.5,27.6 L19.0,26.3 Z M21.8,23.4 L21.8,41.6 L22.4,41.9 L30.4,34.1 L31.2,32.8 L31.2,32.0 L22.6,23.4 Z M25.7,21.8 L25.5,22.9 L43.7,41.1 L44.5,41.1 L44.7,22.4 L44.2,21.8 Z M47.3,3.9 L47.3,16.6 L47.8,17.2 L60.1,17.2 L60.3,16.4 L47.8,3.9 Z M44.5,2.1 L43.4,2.3 L27.6,18.5 L28.1,19.5 L44.5,19.2 Z'
+      />
     </svg>
   )
 }
