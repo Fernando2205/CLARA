@@ -14,18 +14,18 @@ import { Button, Logo } from './components/ui'
 import { useAuthStore } from './stores/auth'
 import { useSessionStore } from './stores/session'
 
-function SignOutSplash({ onLogin }) {
+function SignOutSplash ({ onLogin }) {
   return (
-    <div className="signout-splash">
+    <div className='signout-splash'>
       <Logo light />
-      <Button variant="secondary" icon={LogIn} onClick={onLogin}>Iniciar sesión</Button>
+      <Button variant='secondary' icon={LogIn} onClick={onLogin}>Iniciar sesión</Button>
     </div>
   )
 }
 
 const screens = ['identificacion', 'registro', 'bodega', 'mapa', 'preconteo', 'captura', 'resumen', 'reporte', 'perfil']
 
-export default function App() {
+export default function App () {
   const [screen, setScreen] = useState('identificacion')
   const [previous, setPrevious] = useState('bodega')
   const [autoStartVoice, setAutoStartVoice] = useState(false)
@@ -85,9 +85,9 @@ export default function App() {
 
   return (
     <>
-      <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <div id="main-content">
-        <div className="app-stage" data-screen={screen} key={screen}>
+      <a className='skip-link' href='#main-content'>Saltar al contenido</a>
+      <div id='main-content'>
+        <div className='app-stage' data-screen={screen} key={screen}>
           {signingOut && <SignOutSplash onLogin={goToLogin} />}
           {!signingOut && screen === 'identificacion' && (
             <Identificacion onContinue={() => go('bodega')} onRegister={() => go('registro')} />

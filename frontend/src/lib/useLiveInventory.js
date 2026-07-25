@@ -8,7 +8,7 @@ import { useSessionStore } from '../stores/session'
 // puede tardar (red, cola offline); superponer el registro local encima deja
 // que la fila se pinte gris → verde/amarillo/rojo al instante en cuanto Clara
 // confirma el conteo por voz, sin esperar el siguiente fetch.
-export function useLiveInventory({ warehouse, sessionId, enabled = true }) {
+export function useLiveInventory ({ warehouse, sessionId, enabled = true }) {
   const records = useSessionStore((state) => state.records)
   const [inventory, setInventory] = useState(null)
   const [loading, setLoading] = useState(true)

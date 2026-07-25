@@ -30,7 +30,7 @@ const WAREHOUSE_LABELS = {
   'STOCK KIOSCO PISCIGIROS AYB': 'Kiosco Piscigiros · AyB',
 }
 
-export default function Perfil({ onHome, onSignOut }) {
+export default function Perfil ({ onHome, onSignOut }) {
   const user = useAuthStore((state) => state.user)
   const login = useAuthStore((state) => state.login)
   const [sound, setSound] = useState(true)
@@ -133,39 +133,39 @@ export default function Perfil({ onHome, onSignOut }) {
   }
 
   return (
-    <main className="profile-screen">
-      <header className="profile-topbar">
-        <div className="profile-topbar-inner">
-          <button onClick={onHome} className="plain-button"><Logo light /></button>
-          <div className="profile-topbar-actions">
+    <main className='profile-screen'>
+      <header className='profile-topbar'>
+        <div className='profile-topbar-inner'>
+          <button onClick={onHome} className='plain-button'><Logo light /></button>
+          <div className='profile-topbar-actions'>
             <button aria-label={sound ? 'Desactivar sonidos' : 'Activar sonidos'} onClick={() => setSound((value) => !value)}>
               {sound ? <Volume2 size={21} /> : <VolumeX size={21} />}
             </button>
-            <button aria-label="Notificaciones"><Bell size={21} /></button>
-            <button className="avatar-button" aria-label="Perfil"><Avatar size="sm" /></button>
+            <button aria-label='Notificaciones'><Bell size={21} /></button>
+            <button className='avatar-button' aria-label='Perfil'><Avatar size='sm' /></button>
           </div>
         </div>
       </header>
-      <div className="profile-layout">
-        <section className="history-column">
-          <div className="history-heading">
+      <div className='profile-layout'>
+        <section className='history-column'>
+          <div className='history-heading'>
             <div>
-              <span className="eyebrow">Actividad</span>
+              <span className='eyebrow'>Actividad</span>
               <h1>Historial de tomas</h1>
               <p>Haz clic en una toma para abrir su acta en PDF.</p>
             </div>
-            <button className="filter-button"><SlidersHorizontal size={18} /> Filtrar</button>
+            <button className='filter-button'><SlidersHorizontal size={18} /> Filtrar</button>
           </div>
-          <div className="history-list">
-            {loadingHistory && <p className="preconteo-status">Cargando tu historial…</p>}
+          <div className='history-list'>
+            {loadingHistory && <p className='preconteo-status'>Cargando tu historial…</p>}
             {!loadingHistory && !history.length && (
-              <p className="profile-signature-empty">Todavía no tienes tomas firmadas.</p>
+              <p className='profile-signature-empty'>Todavía no tienes tomas firmadas.</p>
             )}
             {history.map((item) => (
               <article
-                className="history-card history-card-clickable"
+                className='history-card history-card-clickable'
                 key={item.sesion_id}
-                role="button"
+                role='button'
                 tabIndex={0}
                 onClick={() => abrirReporte(item.sesion_id)}
                 onKeyDown={(event) => {
@@ -175,15 +175,15 @@ export default function Perfil({ onHome, onSignOut }) {
                   }
                 }}
               >
-                <span className="history-icon"><FileText size={22} /></span>
-                <div className="history-copy">
-                  <div><span>{new Date(item.fin).toLocaleString('es-CO')}</span><Badge type="sincronizado" /></div>
+                <span className='history-icon'><FileText size={22} /></span>
+                <div className='history-copy'>
+                  <div><span>{new Date(item.fin).toLocaleString('es-CO')}</span><Badge type='sincronizado' /></div>
                   <h2>{WAREHOUSE_LABELS[item.bodega] || item.bodega}</h2>
                   <p>{item.contadas} refs · {item.tiempo_min} min · {item.corregidos} correcciones</p>
                 </div>
-                <div className="history-card-actions">
+                <div className='history-card-actions'>
                   <Button
-                    variant="ghost"
+                    variant='ghost'
                     icon={Download}
                     disabled={openingId === item.sesion_id}
                     onClick={(event) => { event.stopPropagation(); abrirReporte(item.sesion_id) }}
@@ -191,9 +191,9 @@ export default function Perfil({ onHome, onSignOut }) {
                     {openingId === item.sesion_id ? 'Abriendo…' : 'Abrir PDF'}
                   </Button>
                   <button
-                    type="button"
-                    className="history-card-delete"
-                    aria-label="Borrar archivos generados de esta toma"
+                    type='button'
+                    className='history-card-delete'
+                    aria-label='Borrar archivos generados de esta toma'
                     disabled={deletingId === item.sesion_id}
                     onClick={(event) => { event.stopPropagation(); borrarReporte(item.sesion_id) }}
                   >
@@ -205,78 +205,84 @@ export default function Perfil({ onHome, onSignOut }) {
           </div>
           <Button onClick={onHome} icon={ArrowRight}>Iniciar nueva toma</Button>
         </section>
-        <aside className="profile-card">
-          <div className="profile-blue">
-            <div className="profile-avatar-wrap">
-              <Avatar size="xl" />
-              <span className="profile-verified"><CheckCircle2 size={17} /></span>
+        <aside className='profile-card'>
+          <div className='profile-blue'>
+            <div className='profile-avatar-wrap'>
+              <Avatar size='xl' />
+              <span className='profile-verified'><CheckCircle2 size={17} /></span>
             </div>
             <h2>{user.nombre}</h2>
             <p>{user.cargo}</p>
           </div>
-          <div className="profile-details">
+          <div className='profile-details'>
             <div><UserRound size={20} /><span><small>Rol</small><strong>Operaria de inventario</strong></span></div>
             <div><Building2 size={20} /><span><small>Bodega asignada</small><strong>{user.bodega}</strong></span></div>
             <div><CalendarDays size={20} /><span><small>Turno</small><strong>Mañana · 06:00–14:00</strong></span></div>
           </div>
-          <div className="profile-signature-card">
-            <span className="eyebrow"><PenLine size={14} /> Tu firma</span>
-            {!editingFirma ? (
-              <>
-                {user.firma ? (
-                  <img className="profile-signature-preview" src={user.firma} alt="Tu firma" />
-                ) : (
-                  <p className="profile-signature-empty">Aún no has guardado una firma. Se usa para sellar tus reportes.</p>
+          <div className='profile-signature-card'>
+            <span className='eyebrow'><PenLine size={14} /> Tu firma</span>
+            {!editingFirma
+              ? (
+                <>
+                  {user.firma
+                    ? (
+                      <img className='profile-signature-preview' src={user.firma} alt='Tu firma' />
+                      )
+                    : (
+                      <p className='profile-signature-empty'>Aún no has guardado una firma. Se usa para sellar tus reportes.</p>
+                      )}
+                  <Button variant='secondary' icon={PenLine} onClick={() => setEditingFirma(true)}>
+                    {user.firma ? 'Actualizar firma' : 'Agregar firma'}
+                  </Button>
+                </>
+                )
+              : (
+                <>
+                  <SignatureField padRef={firmaRef} width={280} height={120} />
+                  <div className='profile-signature-actions'>
+                    <Button onClick={guardarFirma} disabled={savingFirma}>
+                      {savingFirma ? 'Guardando…' : 'Guardar firma'}
+                    </Button>
+                    <Button variant='secondary' onClick={() => setEditingFirma(false)}>Cancelar</Button>
+                  </div>
+                </>
                 )}
-                <Button variant="secondary" icon={PenLine} onClick={() => setEditingFirma(true)}>
-                  {user.firma ? 'Actualizar firma' : 'Agregar firma'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <SignatureField padRef={firmaRef} width={280} height={120} />
-                <div className="profile-signature-actions">
-                  <Button onClick={guardarFirma} disabled={savingFirma}>
-                    {savingFirma ? 'Guardando…' : 'Guardar firma'}
-                  </Button>
-                  <Button variant="secondary" onClick={() => setEditingFirma(false)}>Cancelar</Button>
-                </div>
-              </>
-            )}
           </div>
-          <div className="profile-signature-card">
-            <span className="eyebrow"><ScanFace size={14} /> Reconocimiento facial</span>
-            {!enrolandoRostro ? (
-              <>
-                <p className="profile-signature-empty">
-                  {rostroEnrolado
-                    ? 'Tu rostro está enrolado en este dispositivo. Vuelve a capturarlo si cambia mucho tu apariencia.'
-                    : 'Aún no enrolas tu rostro en este dispositivo. El reconocimiento facial es 100% local: la foto nunca se envía al servidor.'}
-                </p>
-                <Button variant="secondary" icon={ScanFace} onClick={() => setEnrolandoRostro(true)}>
-                  {rostroEnrolado ? 'Volver a enrolar' : 'Enrolar rostro en este dispositivo'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className={`camera-frame camera-${cameraState}`} aria-label="Captura de rostro">
-                  <video ref={videoRef} autoPlay muted playsInline aria-label="Video de la cámara frontal" />
-                </div>
-                <div className="profile-signature-actions">
-                  <Button onClick={enrolarRostro} disabled={capturandoRostro || cameraState !== 'live'}>
-                    {capturandoRostro ? 'Leyendo tu rostro…' : 'Capturar rostro'}
+          <div className='profile-signature-card'>
+            <span className='eyebrow'><ScanFace size={14} /> Reconocimiento facial</span>
+            {!enrolandoRostro
+              ? (
+                <>
+                  <p className='profile-signature-empty'>
+                    {rostroEnrolado
+                      ? 'Tu rostro está enrolado en este dispositivo. Vuelve a capturarlo si cambia mucho tu apariencia.'
+                      : 'Aún no enrolas tu rostro en este dispositivo. El reconocimiento facial es 100% local: la foto nunca se envía al servidor.'}
+                  </p>
+                  <Button variant='secondary' icon={ScanFace} onClick={() => setEnrolandoRostro(true)}>
+                    {rostroEnrolado ? 'Volver a enrolar' : 'Enrolar rostro en este dispositivo'}
                   </Button>
-                  <Button variant="secondary" onClick={() => setEnrolandoRostro(false)}>Cancelar</Button>
-                </div>
-              </>
-            )}
+                </>
+                )
+              : (
+                <>
+                  <div className={`camera-frame camera-${cameraState}`} aria-label='Captura de rostro'>
+                    <video ref={videoRef} autoPlay muted playsInline aria-label='Video de la cámara frontal' />
+                  </div>
+                  <div className='profile-signature-actions'>
+                    <Button onClick={enrolarRostro} disabled={capturandoRostro || cameraState !== 'live'}>
+                      {capturandoRostro ? 'Leyendo tu rostro…' : 'Capturar rostro'}
+                    </Button>
+                    <Button variant='secondary' onClick={() => setEnrolandoRostro(false)}>Cancelar</Button>
+                  </div>
+                </>
+                )}
           </div>
-          <div className="profile-score">
-            <span className="eyebrow">Este mes</span>
+          <div className='profile-score'>
+            <span className='eyebrow'>Este mes</span>
             <div><strong>12</strong><span>Tomas firmadas</span></div>
             <div><strong>96%</strong><span>Capturas sin corrección</span></div>
           </div>
-          <button className="profile-logout" onClick={onSignOut}><LogOut size={19} /> Cerrar sesión</button>
+          <button className='profile-logout' onClick={onSignOut}><LogOut size={19} /> Cerrar sesión</button>
         </aside>
       </div>
       <Toast message={toast} />

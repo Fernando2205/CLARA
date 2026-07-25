@@ -2,7 +2,7 @@ import { Minus, Plus, Tag, X } from 'lucide-react'
 import { categorize, categoryLabel } from '../lib/categories'
 import { Button, CategoryIcon, ConfidenceChip, InlineAlert } from './ui'
 
-export default function RegistroCard({
+export default function RegistroCard ({
   record,
   quantity,
   setQuantity,
@@ -19,7 +19,7 @@ export default function RegistroCard({
 
   return (
     <article className={`record-card ${unresolvedBlocking.length ? 'record-card-alert' : ''}`}>
-      <div className="record-meta">
+      <div className='record-meta'>
         <span>
           {record.isCorrection
             ? 'CORRECCIÓN DEL ÚLTIMO REGISTRO'
@@ -29,36 +29,36 @@ export default function RegistroCard({
         </span>
         <ConfidenceChip value={record.confidence} />
       </div>
-      <div className="record-heading">
-        <span className="record-category-icon"><CategoryIcon id={category} size={22} /></span>
+      <div className='record-heading'>
+        <span className='record-category-icon'><CategoryIcon id={category} size={22} /></span>
         <div>
           <h2>{record.name}</h2>
           <p>{categoryLabel(category)} · Saldo en sistema: {Number(record.stock).toLocaleString('es-CO', { maximumFractionDigits: 2 })} {record.unit}</p>
         </div>
-        {record.state && <span className="state-chip"><Tag size={14} />{record.state}</span>}
+        {record.state && <span className='state-chip'><Tag size={14} />{record.state}</span>}
       </div>
-      <div className="quantity-editor" aria-label="Cantidad capturada">
-        <button onClick={() => setQuantity(Math.max(0, Number(quantity || 0) - 1))} aria-label="Restar uno">
+      <div className='quantity-editor' aria-label='Cantidad capturada'>
+        <button onClick={() => setQuantity(Math.max(0, Number(quantity || 0) - 1))} aria-label='Restar uno'>
           <Minus size={22} />
         </button>
         <label>
           <span>{record.isCorrection ? 'Nueva cantidad' : 'Cantidad'}</span>
-          {record.isCorrection && <del className="correction-old">{record.oldQuantity}</del>}
+          {record.isCorrection && <del className='correction-old'>{record.oldQuantity}</del>}
           <input
-            inputMode="decimal"
-            type="number"
-            min="0"
-            step="any"
+            inputMode='decimal'
+            type='number'
+            min='0'
+            step='any'
             value={quantity ?? ''}
             onChange={(event) => setQuantity(event.target.value === '' ? null : Number(event.target.value))}
           />
         </label>
-        <button onClick={() => setQuantity(Number(quantity || 0) + 1)} aria-label="Sumar uno">
+        <button onClick={() => setQuantity(Number(quantity || 0) + 1)} aria-label='Sumar uno'>
           <Plus size={22} />
         </button>
         <strong>{record.spokenUnit || record.unit}</strong>
       </div>
-      {record.conversionNote && <p className="conversion-note">{record.conversionNote}</p>}
+      {record.conversionNote && <p className='conversion-note'>{record.conversionNote}</p>}
       {visibleAlerts.map((alert) => (
         <InlineAlert
           alert={alert}
@@ -68,7 +68,7 @@ export default function RegistroCard({
         />
       ))}
       {!!record.alternatives.length && (
-        <div className="alternatives">
+        <div className='alternatives'>
           <span>¿No era este?</span>
           {record.alternatives.map((item) => (
             <button key={item.sku || `${item.warehouse}-${item.name}`} onClick={() => onAlternative(item)}>
@@ -77,11 +77,11 @@ export default function RegistroCard({
           ))}
         </div>
       )}
-      <div className="record-actions">
+      <div className='record-actions'>
         <Button onClick={onConfirm} disabled={unresolvedBlocking.length > 0 || quantity == null}>
           {record.isCorrection ? 'Guardar corrección' : 'Confirmar'}
         </Button>
-        <Button onClick={onCancel} variant="secondary" icon={X}>Cancelar</Button>
+        <Button onClick={onCancel} variant='secondary' icon={X}>Cancelar</Button>
       </div>
     </article>
   )

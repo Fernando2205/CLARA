@@ -6,17 +6,43 @@ import { catalogUnitFromSpoken, matchCatalog, normalizeText } from './matcher'
 // así que se queda como si fuera parte del nombre del producto y rompe el
 // reconocimiento de "esto es solo la cantidad/unidad, sigue con el mismo
 // producto".
-function normalizePhrase(phrase) {
+function normalizePhrase (phrase) {
   return normalizeText(phrase).replace(/(\d)([a-z]+)/g, '$1 $2')
 }
 
 const smallNumbers = {
-  cero: 0, un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
-  seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
-  trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17,
-  dieciocho: 18, diecinueve: 19, veinte: 20, veintiuno: 21, veintidos: 22,
-  veintitres: 23, veinticuatro: 24, veinticinco: 25, veintiseis: 26,
-  veintisiete: 27, veintiocho: 28, veintinueve: 29,
+  cero: 0,
+  un: 1,
+  una: 1,
+  uno: 1,
+  dos: 2,
+  tres: 3,
+  cuatro: 4,
+  cinco: 5,
+  seis: 6,
+  siete: 7,
+  ocho: 8,
+  nueve: 9,
+  diez: 10,
+  once: 11,
+  doce: 12,
+  trece: 13,
+  catorce: 14,
+  quince: 15,
+  dieciseis: 16,
+  diecisiete: 17,
+  dieciocho: 18,
+  diecinueve: 19,
+  veinte: 20,
+  veintiuno: 21,
+  veintidos: 22,
+  veintitres: 23,
+  veinticuatro: 24,
+  veinticinco: 25,
+  veintiseis: 26,
+  veintisiete: 27,
+  veintiocho: 28,
+  veintinueve: 29,
 }
 
 const tens = {
@@ -57,7 +83,7 @@ const removableWords = new Set([
   ...Object.keys(tens),
 ])
 
-function extractQuantity(normalized) {
+function extractQuantity (normalized) {
   if (normalized.includes('no hay')) return 0
   if (normalized.includes('media arroba')) return 6.25
 
@@ -83,7 +109,7 @@ function extractQuantity(normalized) {
   return total
 }
 
-function extractUnit(normalized) {
+function extractUnit (normalized) {
   if (normalized.includes('media arroba') || normalized.includes('kilo')) return 'kilogramos'
   if (/\bkgs?\b/.test(normalized)) return 'kilogramos'
   if (normalized.includes('gramo')) return 'gramos'
@@ -98,7 +124,7 @@ function extractUnit(normalized) {
   return null
 }
 
-function extractProductText(normalized) {
+function extractProductText (normalized) {
   return normalized
     .split(' ')
     .filter((token) => !removableWords.has(token) && !/^\d+(?:[.,]\d+)?$/.test(token))
@@ -106,9 +132,9 @@ function extractProductText(normalized) {
     .trim()
 }
 
-function isCorrectionPhrase(normalized) {
-  return /(perdon|corrige|me equivoque|eran|quise decir)/.test(normalized)
-    || /^no son? /.test(normalized)
+function isCorrectionPhrase (normalized) {
+  return /(perdon|corrige|me equivoque|eran|quise decir)/.test(normalized) ||
+    /^no son? /.test(normalized)
 }
 
 // Frases completas (no substrings, para no confundir un nombre de producto
@@ -123,15 +149,15 @@ const affirmativePhrases = new Set([
   'todo bien', 'si esta bien', 'si es correcto', 'si confirmo',
 ])
 
-export function isAffirmativePhrase(phrase) {
+export function isAffirmativePhrase (phrase) {
   return affirmativePhrases.has(normalizeText(phrase))
 }
 
-function productKey(record) {
+function productKey (record) {
   return record?.sku || normalizeText(record?.name)
 }
 
-export function validateInventoryRecord(record, records = []) {
+export function validateInventoryRecord (record, records = []) {
   const alerts = []
   const spokenCatalogUnit = catalogUnitFromSpoken(record.spokenUnit)
   const duplicate = records.find((item) => productKey(item) === productKey(record))
@@ -209,10 +235,10 @@ export function validateInventoryRecord(record, records = []) {
   const histMin = record.stock > 0 ? record.stock * 0.7 : null
   const histMax = record.stock > 0 ? record.stock * 1.3 : null
   if (
-    histMin != null
-    && record.quantity != null
-    && (record.quantity < histMin * 0.5 || record.quantity > histMax * 2)
-    && Math.abs(record.quantity - record.stock) > 15
+    histMin != null &&
+    record.quantity != null &&
+    (record.quantity < histMin * 0.5 || record.quantity > histMax * 2) &&
+    Math.abs(record.quantity - record.stock) > 15
   ) {
     alerts.push({
       rule: 'V1',
@@ -259,7 +285,7 @@ export function validateInventoryRecord(record, records = []) {
 // era lo que hacía que perdiera el producto seleccionado. Devuelve null si la
 // frase sí parece nombrar un producto (posiblemente distinto), para que el
 // llamador siga el flujo normal.
-export function tryCompletePending(phrase, pending, records = []) {
+export function tryCompletePending (phrase, pending, records = []) {
   if (!pending || pending.type !== 'record') return null
 
   const normalized = normalizePhrase(phrase)
@@ -303,7 +329,7 @@ export function tryCompletePending(phrase, pending, records = []) {
   return updated
 }
 
-export function parseInventoryPhrase(phrase, { warehouse, records = [] } = {}) {
+export function parseInventoryPhrase (phrase, { warehouse, records = [] } = {}) {
   const normalized = normalizePhrase(phrase)
   const quantity = extractQuantity(normalized)
   const spokenUnit = extractUnit(normalized)

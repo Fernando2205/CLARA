@@ -13,7 +13,7 @@ const initialRecords = [
 
 // Marca `id` como sincronizado si sigue existiendo en la sesión actual
 // (pudo haber cambiado de bodega/sesión mientras estaba en la cola).
-function markSynced(set, id) {
+function markSynced (set, id) {
   set((state) => ({
     records: state.records.map((record) => (
       record.id === id && record.badge === 'pendiente'
@@ -23,7 +23,7 @@ function markSynced(set, id) {
   }))
 }
 
-function markPending(set, id) {
+function markPending (set, id) {
   set((state) => ({
     records: state.records.map((record) => (
       record.id === id ? { ...record, badge: 'pendiente' } : record

@@ -2,7 +2,7 @@
 // sistema. No replica exactamente las reglas del validador (services/rules.py),
 // que usa el rango histórico por artículo; esto es una lectura agregada rápida
 // para mapas y resúmenes.
-export function deltaState(actual, sistema) {
+export function deltaState (actual, sistema) {
   if (actual < 0) return 'bad'
   if (sistema > 0) {
     const relDelta = Math.abs(actual - sistema) / sistema

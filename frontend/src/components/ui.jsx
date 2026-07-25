@@ -13,96 +13,98 @@ import {
 } from 'lucide-react'
 import { CATEGORY_ICON_PATHS } from '../lib/categories'
 
-export function CategoryIcon({ id, size = 15 }) {
+export function CategoryIcon ({ id, size = 15 }) {
   return (
     <svg
-      viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+      viewBox='0 0 24 24' width={size} height={size} fill='none' stroke='currentColor'
+      strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'
       dangerouslySetInnerHTML={{ __html: CATEGORY_ICON_PATHS[id] || CATEGORY_ICON_PATHS.general }}
     />
   )
 }
 
-export function Tangram({ size = 32, className = '' }) {
+export function Tangram ({ size = 32, className = '' }) {
   return (
     <svg
-      aria-hidden="true"
+      aria-hidden='true'
       className={className}
       height={size}
-      viewBox="0 0 48 48"
+      viewBox='0 0 48 48'
       width={size}
     >
-      <path d="M5 25 20 10v30Z" fill="#FFD000" />
-      <path d="m20 10 12 12-12 12Z" fill="#EBBF00" />
-      <path d="m32 22 10-10v18Z" fill="#FFD000" />
-      <path d="m20 34 8-8 8 8-8 8Z" fill="#F3C600" />
-      <path d="m5 25 8 8-8 8Z" fill="#0067B1" />
+      <path d='M5 25 20 10v30Z' fill='#FFD000' />
+      <path d='m20 10 12 12-12 12Z' fill='#EBBF00' />
+      <path d='m32 22 10-10v18Z' fill='#FFD000' />
+      <path d='m20 34 8-8 8 8-8 8Z' fill='#F3C600' />
+      <path d='m5 25 8 8-8 8Z' fill='#0067B1' />
     </svg>
   )
 }
 
-export function Logo({ light = false }) {
+export function Logo ({ light = false }) {
   return (
-    <div className="brand" aria-label="CLARA">
+    <div className='brand' aria-label='CLARA'>
       <Tangram size={30} />
       <span className={light ? 'brand-light' : ''}>CLARA</span>
     </div>
   )
 }
 
-export function Avatar({ initials = 'SV', size = 'md' }) {
-  return <span className={`avatar avatar-${size}`} aria-label="Sofía Valencia">{initials}</span>
+export function Avatar ({ initials = 'SV', size = 'md' }) {
+  return <span className={`avatar avatar-${size}`} aria-label='Sofía Valencia'>{initials}</span>
 }
 
-export function Button({ children, variant = 'primary', icon: Icon, className = '', ...props }) {
+export function Button ({ children, variant = 'primary', icon: Icon, className = '', ...props }) {
   return (
     <button className={`button button-${variant} ${className}`} {...props}>
-      {Icon && <Icon aria-hidden="true" size={19} />}
+      {Icon && <Icon aria-hidden='true' size={19} />}
       <span>{children}</span>
     </button>
   )
 }
 
-export function TopBar({ title, online, onNetwork, onProfile, onBack, backLabel = 'Volver' }) {
+export function TopBar ({ title, online, onNetwork, onProfile, onBack, backLabel = 'Volver' }) {
   return (
-    <header className="topbar">
-      <div className="topbar-left">
-        {onBack ? (
-          <button className="icon-text-button on-blue" onClick={onBack} aria-label={backLabel}>
-            <RotateCcw size={19} />
-            <span>{backLabel}</span>
-          </button>
-        ) : <Logo light />}
-        {title && <span className="topbar-divider" aria-hidden="true" />}
-        {title && <strong className="topbar-title">{title}</strong>}
+    <header className='topbar'>
+      <div className='topbar-left'>
+        {onBack
+          ? (
+            <button className='icon-text-button on-blue' onClick={onBack} aria-label={backLabel}>
+              <RotateCcw size={19} />
+              <span>{backLabel}</span>
+            </button>
+            )
+          : <Logo light />}
+        {title && <span className='topbar-divider' aria-hidden='true' />}
+        {title && <strong className='topbar-title'>{title}</strong>}
       </div>
-      <div className="topbar-actions">
+      <div className='topbar-actions'>
         {typeof online === 'boolean' && (
           <button className={`network-chip ${online ? '' : 'offline'}`} onClick={onNetwork}>
             {online ? <Wifi size={15} /> : <CloudOff size={15} />}
             <span>{online ? 'En línea' : 'Guardando local'}</span>
           </button>
         )}
-        <button className="avatar-button" onClick={onProfile} aria-label="Abrir perfil">
-          <Avatar size="sm" />
+        <button className='avatar-button' onClick={onProfile} aria-label='Abrir perfil'>
+          <Avatar size='sm' />
         </button>
       </div>
     </header>
   )
 }
 
-export function Progress({ current, total, alerts }) {
+export function Progress ({ current, total, alerts }) {
   const value = Math.min(100, Math.round((current / total) * 100))
   return (
-    <div className="progress-block">
-      <div className="progress-copy">
+    <div className='progress-block'>
+      <div className='progress-copy'>
         <span>{current} de {total}</span>
         {alerts != null && <span>{alerts} alertas resueltas</span>}
       </div>
       <div
-        className="progress-track"
-        role="progressbar"
-        aria-valuemin="0"
+        className='progress-track'
+        role='progressbar'
+        aria-valuemin='0'
         aria-valuemax={total}
         aria-valuenow={current}
       >
@@ -112,7 +114,7 @@ export function Progress({ current, total, alerts }) {
   )
 }
 
-export function ConfidenceChip({ value }) {
+export function ConfidenceChip ({ value }) {
   const level = value >= 0.85 ? 'high' : value >= 0.6 ? 'medium' : 'low'
   const label = level === 'high' ? 'Alta' : level === 'medium' ? 'Revisar' : 'Confirmar'
   const Icon = level === 'high' ? CheckCircle2 : AlertTriangle
@@ -124,7 +126,7 @@ export function ConfidenceChip({ value }) {
   )
 }
 
-export function Badge({ type }) {
+export function Badge ({ type }) {
   const content = {
     sincronizado: [CheckCircle2, 'Sincronizado'],
     pendiente: [CloudOff, 'Pendiente'],
@@ -140,21 +142,21 @@ export function Badge({ type }) {
   )
 }
 
-export function InlineAlert({ alert, resolved, onResolve }) {
+export function InlineAlert ({ alert, resolved, onResolve }) {
   const Icon = alert.level === 'info' ? Info : AlertTriangle
   const actions = alert.actions?.length
     ? alert.actions
     : [{ label: alert.action || 'Entendido', value: 'acknowledge' }]
   return (
     <div className={`inline-alert alert-${alert.level} ${resolved ? 'resolved' : ''}`}>
-      <div className="inline-alert-message">
+      <div className='inline-alert-message'>
         {resolved ? <CheckCircle2 size={18} /> : <Icon size={18} />}
         <span>{resolved ? `${alert.rule || 'Alerta'} resuelta.` : alert.message}</span>
       </div>
       {!resolved && (
         <>
           {(alert.reason || alert.recommendation) && (
-            <div className="inline-alert-explanation">
+            <div className='inline-alert-explanation'>
               {alert.reason && (
                 <p><CircleHelp size={15} /><span><strong>Por qué:</strong> {alert.reason}</span></p>
               )}
@@ -163,7 +165,7 @@ export function InlineAlert({ alert, resolved, onResolve }) {
               )}
             </div>
           )}
-          <div className="inline-alert-actions">
+          <div className='inline-alert-actions'>
             {actions.map((action) => (
               <button key={`${alert.rule}-${action.value}-${action.label}`} onClick={() => onResolve(action)}>
                 {action.label}
@@ -176,28 +178,28 @@ export function InlineAlert({ alert, resolved, onResolve }) {
   )
 }
 
-export function StatTile({ value, label, icon: Icon }) {
+export function StatTile ({ value, label, icon: Icon }) {
   return (
-    <article className="stat-tile">
-      {Icon && <span className="stat-icon"><Icon size={20} /></span>}
+    <article className='stat-tile'>
+      {Icon && <span className='stat-icon'><Icon size={20} /></span>}
       <strong>{value}</strong>
       <span>{label}</span>
     </article>
   )
 }
 
-export function Toast({ message, type = 'ok' }) {
+export function Toast ({ message, type = 'ok' }) {
   if (!message) return null
   const Icon = type === 'info' ? Info : CheckCircle2
   return (
-    <div className={`toast toast-${type}`} role="status">
+    <div className={`toast toast-${type}`} role='status'>
       <Icon size={19} />
       <span>{message}</span>
     </div>
   )
 }
 
-export function PinPad({ value, onChange, length = 4 }) {
+export function PinPad ({ value, onChange, length = 4 }) {
   const press = (digit) => {
     if (value.length >= length) return
     onChange(`${value}${digit}`)
@@ -206,18 +208,18 @@ export function PinPad({ value, onChange, length = 4 }) {
 
   return (
     <>
-      <div className="pin-dots" aria-label={`${value.length} de ${length} dígitos`}>
+      <div className='pin-dots' aria-label={`${value.length} de ${length} dígitos`}>
         {Array.from({ length }).map((_, dot) => (
           <span className={value.length > dot ? 'filled' : ''} key={dot} />
         ))}
       </div>
-      <div className="pin-grid">
+      <div className='pin-grid'>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-          <button type="button" key={digit} onClick={() => press(digit)}>{digit}</button>
+          <button type='button' key={digit} onClick={() => press(digit)}>{digit}</button>
         ))}
         <span />
-        <button type="button" onClick={() => press(0)}>0</button>
-        <button type="button" aria-label="Borrar último dígito" onClick={backspace}>
+        <button type='button' onClick={() => press(0)}>0</button>
+        <button type='button' aria-label='Borrar último dígito' onClick={backspace}>
           <Delete size={24} />
         </button>
       </div>
@@ -225,14 +227,14 @@ export function PinPad({ value, onChange, length = 4 }) {
   )
 }
 
-export function MicButton({ state = 'idle', onClick }) {
+export function MicButton ({ state = 'idle', onClick }) {
   return (
     <button
       className={`mic-button mic-${state}`}
       onClick={onClick}
       aria-label={state === 'listening' ? 'Detener grabación' : 'Hablar'}
     >
-      {state === 'processing' ? <span className="processing-dots"><i /><i /><i /></span> : <Mic size={34} />}
+      {state === 'processing' ? <span className='processing-dots'><i /><i /><i /></span> : <Mic size={34} />}
     </button>
   )
 }

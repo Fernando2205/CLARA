@@ -32,7 +32,7 @@ const warehouses = [
   },
 ]
 
-export default function SeleccionBodega({ onContinue, onMap, onProfile }) {
+export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
   const mode = useSessionStore((state) => state.mode)
   const setMode = useSessionStore((state) => state.setMode)
   const setBodega = useSessionStore((state) => state.setBodega)
@@ -45,24 +45,24 @@ export default function SeleccionBodega({ onContinue, onMap, onProfile }) {
   }
 
   return (
-    <main className="warehouse-screen">
-      <header className="warehouse-header">
+    <main className='warehouse-screen'>
+      <header className='warehouse-header'>
         <Logo light />
-        <button className="user-compact" onClick={onProfile}>
+        <button className='user-compact' onClick={onProfile}>
           <div>
             <strong>{user.nombre}</strong>
             <span>{user.turno}</span>
           </div>
-          <Avatar size="sm" />
+          <Avatar size='sm' />
         </button>
       </header>
-      <section className="warehouse-shell">
-        <div className="warehouse-title">
-          <span className="eyebrow"><MapPin size={15} /> Nueva sesión</span>
+      <section className='warehouse-shell'>
+        <div className='warehouse-title'>
+          <span className='eyebrow'><MapPin size={15} /> Nueva sesión</span>
           <h1>¿Dónde vas a contar?</h1>
           <p>Selecciona el punto de inventario. Clara recordará esta sesión si necesitas retomarla.</p>
         </div>
-        <div className="mode-switch" aria-label="Modo de sesión">
+        <div className='mode-switch' aria-label='Modo de sesión'>
           <button className={mode === 'toma' ? 'active' : ''} onClick={() => setMode('toma')}>
             <Boxes size={18} /> Toma física
           </button>
@@ -70,39 +70,39 @@ export default function SeleccionBodega({ onContinue, onMap, onProfile }) {
             <Building2 size={18} /> Requisición
           </button>
         </div>
-        <div className="warehouse-list">
+        <div className='warehouse-list'>
           {warehouses.map((warehouse) => (
             <button
               className={`warehouse-card ${warehouse.suggested ? 'suggested' : ''} ${selected === warehouse.id ? 'selected' : ''}`}
               key={warehouse.id}
               onClick={() => select(warehouse)}
             >
-              <span className="warehouse-icon"><Building2 size={24} /></span>
-              <span className="warehouse-copy">
-                <span className="warehouse-label-line">
+              <span className='warehouse-icon'><Building2 size={24} /></span>
+              <span className='warehouse-copy'>
+                <span className='warehouse-label-line'>
                   <strong>{warehouse.label}</strong>
                   {warehouse.suggested && <em>Tu bodega</em>}
                 </span>
-                <span className="warehouse-meta">
+                <span className='warehouse-meta'>
                   <span>{warehouse.refs} referencias</span>
                   <i />
                   <span><Clock3 size={14} /> Última toma {warehouse.date}</span>
                 </span>
                 {warehouse.open && <Progress current={warehouse.open} total={warehouse.refs} />}
               </span>
-              <span className="warehouse-action">
+              <span className='warehouse-action'>
                 {warehouse.open ? 'Continuar' : 'Empezar'} <ArrowRight size={20} />
               </span>
             </button>
           ))}
         </div>
-        <div className="warehouse-footer">
+        <div className='warehouse-footer'>
           <div>
             <strong>{mode === 'toma' ? 'Toma física' : 'Requisición'} · {warehouses.find((item) => item.id === selected)?.label}</strong>
             <span>La sesión se guarda automáticamente en este dispositivo.</span>
           </div>
-          <div className="warehouse-footer-actions">
-            <Button variant="secondary" onClick={onMap} icon={Map}>Ver mapa en vivo</Button>
+          <div className='warehouse-footer-actions'>
+            <Button variant='secondary' onClick={onMap} icon={Map}>Ver mapa en vivo</Button>
             <Button onClick={onContinue} icon={ArrowRight}>Comenzar conteo</Button>
           </div>
         </div>

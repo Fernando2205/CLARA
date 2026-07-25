@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export function useCamera(active) {
+export function useCamera (active) {
   const [cameraState, setCameraState] = useState('fallback')
   const videoRef = useRef(null)
   const streamRef = useRef(null)

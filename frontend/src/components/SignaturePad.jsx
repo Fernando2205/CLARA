@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { Eraser } from 'lucide-react'
 
-export const SignaturePad = forwardRef(function SignaturePad({ width = 480, height = 180 }, ref) {
+export const SignaturePad = forwardRef(function SignaturePad ({ width = 480, height = 180 }, ref) {
   const canvasRef = useRef(null)
   const drawing = useRef(false)
   const dirty = useRef(false)
@@ -15,15 +15,15 @@ export const SignaturePad = forwardRef(function SignaturePad({ width = 480, heig
   }, [])
 
   useImperativeHandle(ref, () => ({
-    clear() {
+    clear () {
       const canvas = canvasRef.current
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
       dirty.current = false
     },
-    isEmpty() {
+    isEmpty () {
       return !dirty.current
     },
-    toBlob() {
+    toBlob () {
       return new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png'))
     },
   }), [])
@@ -62,24 +62,24 @@ export const SignaturePad = forwardRef(function SignaturePad({ width = 480, heig
       ref={canvasRef}
       width={width}
       height={height}
-      className="signature-canvas"
+      className='signature-canvas'
       onPointerDown={start}
       onPointerMove={move}
       onPointerUp={stop}
       onPointerLeave={stop}
-      role="img"
-      aria-label="Área para dibujar tu firma"
+      role='img'
+      aria-label='Área para dibujar tu firma'
     />
   )
 })
 
-export function SignatureField({ padRef, hint = 'Dibuja tu firma con el dedo o el mouse', width, height }) {
+export function SignatureField ({ padRef, hint = 'Dibuja tu firma con el dedo o el mouse', width, height }) {
   return (
-    <div className="signature-field">
+    <div className='signature-field'>
       <SignaturePad ref={padRef} width={width} height={height} />
-      <div className="signature-field-foot">
+      <div className='signature-field-foot'>
         <span>{hint}</span>
-        <button type="button" className="signature-clear-button" onClick={() => padRef.current?.clear()}>
+        <button type='button' className='signature-clear-button' onClick={() => padRef.current?.clear()}>
           <Eraser size={14} /> Borrar
         </button>
       </div>

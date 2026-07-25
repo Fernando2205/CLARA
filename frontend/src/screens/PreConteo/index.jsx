@@ -12,7 +12,7 @@ const unitLabels = {
   Portion: 'porciones',
 }
 
-export default function PreConteo({ onBack, onStart, onProfile }) {
+export default function PreConteo ({ onBack, onStart, onProfile }) {
   const warehouse = useSessionStore((state) => state.bodega)
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
   const sessionId = useSessionStore((state) => state.sessionId)
@@ -42,68 +42,68 @@ export default function PreConteo({ onBack, onStart, onProfile }) {
   const contadas = items.filter((item) => item.contado_en_sesion).length
 
   return (
-    <main className="preconteo-screen">
-      <TopBar title={bodegaLabel} onBack={onBack} backLabel="Bodegas" onProfile={onProfile} />
-      <div className="preconteo-layout">
-        <div className="preconteo-heading">
-          <span className="eyebrow"><ClipboardList size={15} /> Antes de empezar</span>
+    <main className='preconteo-screen'>
+      <TopBar title={bodegaLabel} onBack={onBack} backLabel='Bodegas' onProfile={onProfile} />
+      <div className='preconteo-layout'>
+        <div className='preconteo-heading'>
+          <span className='eyebrow'><ClipboardList size={15} /> Antes de empezar</span>
           <h1>Estos son los productos que vas a contar</h1>
           <p>Clara escuchará tu voz y validará cada producto contra este catálogo mientras dictas el conteo.</p>
         </div>
 
-        <div className="mapa-stats">
-          <StatTile icon={PackageCheck} value={inventory?.resumen?.total ?? '—'} label="Referencias en esta bodega" />
-          <StatTile icon={ClipboardList} value={contadas} label="Ya contadas en esta sesión" />
-          <StatTile icon={AlertTriangle} value={inventory?.resumen?.saldo_negativo ?? '—'} label="Por verificar" />
+        <div className='mapa-stats'>
+          <StatTile icon={PackageCheck} value={inventory?.resumen?.total ?? '—'} label='Referencias en esta bodega' />
+          <StatTile icon={ClipboardList} value={contadas} label='Ya contadas en esta sesión' />
+          <StatTile icon={AlertTriangle} value={inventory?.resumen?.saldo_negativo ?? '—'} label='Por verificar' />
         </div>
 
-        {error && <p className="mapa-error">{error}</p>}
+        {error && <p className='mapa-error'>{error}</p>}
 
-        <label className="preconteo-search">
+        <label className='preconteo-search'>
           <Search size={18} />
-          <span className="sr-only">Buscar producto</span>
+          <span className='sr-only'>Buscar producto</span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar producto en esta bodega"
+            placeholder='Buscar producto en esta bodega'
           />
         </label>
 
-        <div className="preconteo-list" role="table" aria-label="Productos a contar">
-          <div className="preconteo-row preconteo-row-head" role="row">
-            <span role="columnheader">Producto</span>
-            <span role="columnheader">Sistema</span>
-            <span role="columnheader">Estado</span>
+        <div className='preconteo-list' role='table' aria-label='Productos a contar'>
+          <div className='preconteo-row preconteo-row-head' role='row'>
+            <span role='columnheader'>Producto</span>
+            <span role='columnheader'>Sistema</span>
+            <span role='columnheader'>Estado</span>
           </div>
-          <div className="preconteo-list-body">
-            {loading && <p className="preconteo-status">Cargando productos…</p>}
+          <div className='preconteo-list-body'>
+            {loading && <p className='preconteo-status'>Cargando productos…</p>}
             {!loading && !error && !visibleItems.length && (
-              <p className="preconteo-status">No encontramos productos con ese nombre.</p>
+              <p className='preconteo-status'>No encontramos productos con ese nombre.</p>
             )}
             {!loading && visibleItems.map((item) => (
-              <article className="preconteo-row" role="row" key={item.id}>
-                <span className="preconteo-product" role="cell">
-                  <span className="preconteo-icon"><CategoryIcon id={categorize(item.nombre)} size={16} /></span>
+              <article className='preconteo-row' role='row' key={item.id}>
+                <span className='preconteo-product' role='cell'>
+                  <span className='preconteo-icon'><CategoryIcon id={categorize(item.nombre)} size={16} /></span>
                   <span>
                     <strong>{item.nombre}</strong>
                     <small>{categoryLabel(categorize(item.nombre))}{item.sku ? ` · SKU ${item.sku}` : ''}</small>
                   </span>
                 </span>
-                <span className="preconteo-amount" role="cell">
+                <span className='preconteo-amount' role='cell'>
                   <strong>{Number(item.stock_sistema).toLocaleString('es-CO', { maximumFractionDigits: 2 })}</strong>
                   <small>{unitLabels[item.unidad] || item.unidad}</small>
                 </span>
-                <span role="cell">
+                <span role='cell'>
                   {item.contado_en_sesion
-                    ? <span className="preconteo-chip preconteo-chip-done">Contado</span>
-                    : <span className="preconteo-chip">Pendiente</span>}
+                    ? <span className='preconteo-chip preconteo-chip-done'>Contado</span>
+                    : <span className='preconteo-chip'>Pendiente</span>}
                 </span>
               </article>
             ))}
           </div>
         </div>
       </div>
-      <div className="preconteo-footer">
+      <div className='preconteo-footer'>
         <div>
           <strong>{items.length} referencias listas para contar</strong>
           <span>Clara te corregirá al instante si algo no cuadra.</span>

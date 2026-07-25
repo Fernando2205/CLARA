@@ -7,7 +7,7 @@ import { useCamera } from '../../lib/useCamera'
 import { captureDescriptor, saveToGallery } from '../../lib/facial'
 import { registerUser, toStoreUser } from '../../lib/api'
 
-export default function Registro({ onDone, onBack }) {
+export default function Registro ({ onDone, onBack }) {
   const [nombre, setNombre] = useState('')
   const [cedula, setCedula] = useState('')
   const [correo, setCorreo] = useState('')
@@ -68,58 +68,58 @@ export default function Registro({ onDone, onBack }) {
   }
 
   return (
-    <main className="auth-screen">
-      <section className="auth-shell register-shell">
+    <main className='auth-screen'>
+      <section className='auth-shell register-shell'>
         <Logo />
-        <div className="pin-heading">
+        <div className='pin-heading'>
           <span>Alta de usuario</span>
           <h1>Crea tu cuenta</h1>
           <p>Necesitamos tus datos, una foto de tu rostro para reconocerte y tu firma para sellar tus reportes.</p>
         </div>
 
-        <form className="register-form" onSubmit={submit}>
-          <div className="register-fields">
-            <label className="credentials-field">
+        <form className='register-form' onSubmit={submit}>
+          <div className='register-fields'>
+            <label className='credentials-field'>
               <span>Nombre completo</span>
               <input value={nombre} onChange={(event) => setNombre(event.target.value)} autoFocus />
             </label>
-            <label className="credentials-field">
+            <label className='credentials-field'>
               <span>Cédula</span>
-              <input value={cedula} onChange={(event) => setCedula(event.target.value)} inputMode="numeric" />
+              <input value={cedula} onChange={(event) => setCedula(event.target.value)} inputMode='numeric' />
             </label>
-            <label className="credentials-field">
+            <label className='credentials-field'>
               <span>Correo</span>
-              <input type="email" value={correo} onChange={(event) => setCorreo(event.target.value)} />
+              <input type='email' value={correo} onChange={(event) => setCorreo(event.target.value)} />
             </label>
-            <div className="register-pin">
+            <div className='register-pin'>
               <span>PIN de 4 dígitos</span>
               <PinPad value={pin} onChange={setPin} />
             </div>
           </div>
 
-          <div className="register-photo">
-            <div className={`camera-frame camera-${cameraState}`} aria-label="Captura de rostro para registro">
-              <video ref={videoRef} autoPlay muted playsInline aria-label="Video de la cámara frontal" />
+          <div className='register-photo'>
+            <div className={`camera-frame camera-${cameraState}`} aria-label='Captura de rostro para registro'>
+              <video ref={videoRef} autoPlay muted playsInline aria-label='Video de la cámara frontal' />
             </div>
-            <Button type="button" variant="secondary" icon={Camera} onClick={capturarRostro} disabled={enrolando}>
+            <Button type='button' variant='secondary' icon={Camera} onClick={capturarRostro} disabled={enrolando}>
               {enrolando ? 'Leyendo tu rostro…' : rostroListo ? 'Capturar de nuevo' : 'Capturar rostro'}
             </Button>
-            {rostroListo && <p className="register-photo-ok">Rostro listo ✓ (se guarda solo en este dispositivo)</p>}
+            {rostroListo && <p className='register-photo-ok'>Rostro listo ✓ (se guarda solo en este dispositivo)</p>}
           </div>
 
-          <div className="register-signature">
-            <span className="credentials-field-label">Tu firma</span>
+          <div className='register-signature'>
+            <span className='credentials-field-label'>Tu firma</span>
             <SignatureField padRef={firmaRef} width={420} height={150} />
           </div>
 
-          {error && <p className="credentials-error">{error}</p>}
+          {error && <p className='credentials-error'>{error}</p>}
 
-          <Button type="submit" icon={UserPlus} disabled={!listo || enviando}>
+          <Button type='submit' icon={UserPlus} disabled={!listo || enviando}>
             {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
           </Button>
         </form>
 
-        <button className="link-button" onClick={onBack}>
+        <button className='link-button' onClick={onBack}>
           <ArrowLeft size={16} /> Volver al reconocimiento facial
         </button>
       </section>

@@ -50,11 +50,11 @@ export const CATEGORY_DEFS = [
 
 const CATEGORY_BY_ID = Object.fromEntries(CATEGORY_DEFS.map((cat) => [cat.id, cat]))
 
-export function categoryLabel(id) {
+export function categoryLabel (id) {
   return CATEGORY_BY_ID[id]?.label || 'Otros'
 }
 
-export function categorize(name) {
+export function categorize (name) {
   const normalized = ` ${normalizeText(name)} `
   for (const cat of CATEGORY_DEFS) {
     if (cat.id === 'general') continue

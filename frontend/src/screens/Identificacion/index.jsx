@@ -13,7 +13,7 @@ const MAX_CONSECUTIVE_FAILURES = 2
 const NO_FACE_TIMEOUT_MS = 5000
 const ATTEMPT_INTERVAL_MS = 900
 
-export default function Identificacion({ onContinue, onRegister }) {
+export default function Identificacion ({ onContinue, onRegister }) {
   const [stage, setStage] = useState('face')
   const [statusText, setStatusText] = useState('Buscando tu rostro…')
   const [identidad, setIdentidad] = useState('')
@@ -99,62 +99,64 @@ export default function Identificacion({ onContinue, onRegister }) {
   }
 
   return (
-    <main className="auth-screen">
+    <main className='auth-screen'>
       <section className={`auth-shell auth-shell-${stage}`}>
         <Logo />
 
-        {stage === 'face' ? (
-          <div className="face-stage">
-            <div className={`camera-frame camera-${cameraState}`} aria-label="Vista de reconocimiento facial">
-              <video ref={videoRef} autoPlay muted playsInline aria-label="Video de la cámara frontal" />
-              <span className="scan-line" />
-            </div>
+        {stage === 'face'
+          ? (
+            <div className='face-stage'>
+              <div className={`camera-frame camera-${cameraState}`} aria-label='Vista de reconocimiento facial'>
+                <video ref={videoRef} autoPlay muted playsInline aria-label='Video de la cámara frontal' />
+                <span className='scan-line' />
+              </div>
 
-            <div className="face-status" role="status" aria-live="polite">
-              <ScanFace size={19} />
-              <span>{cameraState === 'live' ? statusText : 'Activa tu cámara para reconocerte'}</span>
-            </div>
+              <div className='face-status' role='status' aria-live='polite'>
+                <ScanFace size={19} />
+                <span>{cameraState === 'live' ? statusText : 'Activa tu cámara para reconocerte'}</span>
+              </div>
 
-            <div className="face-actions">
-              <Button variant="secondary" icon={KeyRound} onClick={() => setStage('credenciales')}>
-                Usar credenciales
-              </Button>
-              <button className="link-button pin-entry-link" onClick={onRegister}>
+              <div className='face-actions'>
+                <Button variant='secondary' icon={KeyRound} onClick={() => setStage('credenciales')}>
+                  Usar credenciales
+                </Button>
+                <button className='link-button pin-entry-link' onClick={onRegister}>
+                  <UserPlus size={16} /> ¿Nuevo aquí? Regístrate
+                </button>
+              </div>
+            </div>
+            )
+          : (
+            <div className='pin-stage'>
+              <div className='pin-heading'>
+                <span>Acceso alternativo</span>
+                <h1>Ingresa tus credenciales</h1>
+                <p>Escribe tu cédula o nombre y tu PIN de cuatro dígitos.</p>
+              </div>
+              <form className='credentials-form' onSubmit={submitCredentials}>
+                <label className='credentials-field'>
+                  <span>Cédula o nombre</span>
+                  <input
+                    value={identidad}
+                    onChange={(event) => setIdentidad(event.target.value)}
+                    autoComplete='username'
+                    autoFocus
+                  />
+                </label>
+                <PinPad value={pin} onChange={setPin} />
+                {credencialesError && <p className='credentials-error'>{credencialesError}</p>}
+                <Button type='submit' disabled={!identidad.trim() || pin.length !== 4 || verificando}>
+                  {verificando ? 'Verificando…' : 'Entrar'}
+                </Button>
+              </form>
+              <button className='link-button' onClick={onRegister}>
                 <UserPlus size={16} /> ¿Nuevo aquí? Regístrate
               </button>
+              <button className='link-button' onClick={() => { failuresRef.current = 0; setStage('face') }}>
+                Volver al reconocimiento facial
+              </button>
             </div>
-          </div>
-        ) : (
-          <div className="pin-stage">
-            <div className="pin-heading">
-              <span>Acceso alternativo</span>
-              <h1>Ingresa tus credenciales</h1>
-              <p>Escribe tu cédula o nombre y tu PIN de cuatro dígitos.</p>
-            </div>
-            <form className="credentials-form" onSubmit={submitCredentials}>
-              <label className="credentials-field">
-                <span>Cédula o nombre</span>
-                <input
-                  value={identidad}
-                  onChange={(event) => setIdentidad(event.target.value)}
-                  autoComplete="username"
-                  autoFocus
-                />
-              </label>
-              <PinPad value={pin} onChange={setPin} />
-              {credencialesError && <p className="credentials-error">{credencialesError}</p>}
-              <Button type="submit" disabled={!identidad.trim() || pin.length !== 4 || verificando}>
-                {verificando ? 'Verificando…' : 'Entrar'}
-              </Button>
-            </form>
-            <button className="link-button" onClick={onRegister}>
-              <UserPlus size={16} /> ¿Nuevo aquí? Regístrate
-            </button>
-            <button className="link-button" onClick={() => { failuresRef.current = 0; setStage('face') }}>
-              Volver al reconocimiento facial
-            </button>
-          </div>
-        )}
+            )}
       </section>
     </main>
   )

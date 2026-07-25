@@ -2,7 +2,7 @@
 // de tamaño proporcional a su valor, alternando cortes verticales/horizontales.
 // Esto es lo que produce el efecto de "plano real" (bloques de tamaños distintos
 // encajados unos junto a otros) en vez de una grilla uniforme de tarjetas.
-export function sliceTreemap(items, x, y, w, h, direction = w >= h ? 'h' : 'v') {
+export function sliceTreemap (items, x, y, w, h, direction = w >= h ? 'h' : 'v') {
   if (!items.length) return []
   if (items.length === 1) {
     return [{ id: items[0].id, x, y, w, h }]
@@ -39,7 +39,7 @@ export function sliceTreemap(items, x, y, w, h, direction = w >= h ? 'h' : 'v') 
 
 // Reparte una lista de {id, total} en `count` grupos balanceados por suma,
 // para formar "alas" del edificio con superficie total comparable.
-export function balancedGroups(entries, count) {
+export function balancedGroups (entries, count) {
   const groups = Array.from({ length: count }, () => ({ items: [], total: 0 }))
   const sorted = entries.slice().sort((a, b) => b.total - a.total)
   sorted.forEach((entry) => {

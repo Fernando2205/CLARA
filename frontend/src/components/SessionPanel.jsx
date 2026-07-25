@@ -10,17 +10,17 @@ const unitLabels = {
   Portion: 'porciones',
 }
 
-function formatNumber(value) {
+function formatNumber (value) {
   return Number(value).toLocaleString('es-CO', { maximumFractionDigits: 2 })
 }
 
-function CheckStateIcon({ state }) {
+function CheckStateIcon ({ state }) {
   if (state === 'ok') return <CheckCircle2 size={16} />
   if (state === 'warn' || state === 'bad') return <AlertTriangle size={16} />
   return <MinusCircle size={16} />
 }
 
-export default function SessionPanel({
+export default function SessionPanel ({
   warehouse,
   sessionId,
   alerts,
@@ -36,14 +36,14 @@ export default function SessionPanel({
     const normalized = query.trim().toLocaleLowerCase('es-CO')
     if (!normalized) return items
     return items.filter((item) => (
-      item.nombre.toLocaleLowerCase('es-CO').includes(normalized)
-        || String(item.sku || '').includes(normalized)
+      item.nombre.toLocaleLowerCase('es-CO').includes(normalized) ||
+        String(item.sku || '').includes(normalized)
     ))
   }, [items, query])
 
   return (
     <aside className={`session-panel ${mobileOpen ? 'mobile-open' : ''}`}>
-      <button className="mobile-sheet-handle" onClick={onMobileToggle} aria-label="Abrir lista de productos">
+      <button className='mobile-sheet-handle' onClick={onMobileToggle} aria-label='Abrir lista de productos'>
         <span />
         <div>
           <strong>Toma en curso</strong>
@@ -51,62 +51,64 @@ export default function SessionPanel({
         </div>
         <ChevronDown size={20} />
       </button>
-      <div className="session-panel-head">
+      <div className='session-panel-head'>
         <div>
-          <span className="eyebrow">Inventario en vivo</span>
+          <span className='eyebrow'>Inventario en vivo</span>
           <h2>Toma en curso</h2>
         </div>
-        <span className="live-dot">En vivo</span>
+        <span className='live-dot'>En vivo</span>
       </div>
       <Progress current={countedTotal} total={total || 1} alerts={alerts} />
 
-      <label className="checklist-search">
+      <label className='checklist-search'>
         <Search size={16} />
-        <span className="sr-only">Buscar producto en esta bodega</span>
+        <span className='sr-only'>Buscar producto en esta bodega</span>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Buscar en la lista de productos"
+          placeholder='Buscar en la lista de productos'
         />
       </label>
 
-      <div className="checklist" aria-label="Todos los productos de esta bodega">
-        {error && <p className="checklist-error">{error}</p>}
-        {loading && !items.length && <p className="checklist-status">Cargando productos…</p>}
+      <div className='checklist' aria-label='Todos los productos de esta bodega'>
+        {error && <p className='checklist-error'>{error}</p>}
+        {loading && !items.length && <p className='checklist-status'>Cargando productos…</p>}
         {!loading && !error && !visibleItems.length && (
-          <p className="checklist-status">No encontramos productos con ese nombre.</p>
+          <p className='checklist-status'>No encontramos productos con ese nombre.</p>
         )}
         {visibleItems.map((item) => (
           <article
             className={`checklist-item checklist-item-${item.countState} ${justCounted.has(item.id) ? 'row-flash' : ''}`}
             key={item.id}
           >
-            <span className="checklist-item-state"><CheckStateIcon state={item.countState} /></span>
-            <div className="checklist-item-copy">
+            <span className='checklist-item-state'><CheckStateIcon state={item.countState} /></span>
+            <div className='checklist-item-copy'>
               <strong>{item.nombre}</strong>
               <span>{item.sku ? `SKU ${item.sku}` : 'Sin código'}</span>
               {item.badge && <Badge type={item.badge} />}
             </div>
-            <div className="checklist-item-quantity">
-              {item.contado_en_sesion ? (
-                <>
-                  <strong>{formatNumber(item.cantidad_actual)}</strong>
-                  <span>{unitLabels[item.unidad] || item.unidad}</span>
-                </>
-              ) : (
-                <>
-                  <strong>{formatNumber(item.stock_sistema)}</strong>
-                  <span>sistema</span>
-                </>
-              )}
+            <div className='checklist-item-quantity'>
+              {item.contado_en_sesion
+                ? (
+                  <>
+                    <strong>{formatNumber(item.cantidad_actual)}</strong>
+                    <span>{unitLabels[item.unidad] || item.unidad}</span>
+                  </>
+                  )
+                : (
+                  <>
+                    <strong>{formatNumber(item.stock_sistema)}</strong>
+                    <span>sistema</span>
+                  </>
+                  )}
             </div>
           </article>
         ))}
       </div>
 
-      <div className="session-panel-foot">
-        <Button variant="secondary" onClick={onClose}>Cerrar y firmar</Button>
-        <button className="report-shortcut" onClick={onReport}>
+      <div className='session-panel-foot'>
+        <Button variant='secondary' onClick={onClose}>Cerrar y firmar</Button>
+        <button className='report-shortcut' onClick={onReport}>
           <FileText size={16} /> Generar reporte con lo contado hasta ahora
         </button>
       </div>

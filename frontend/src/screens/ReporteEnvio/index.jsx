@@ -30,7 +30,7 @@ const ALCANCES = [
   { value: 'faltantes', label: 'Solo faltantes' },
 ]
 
-export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
+export default function ReporteEnvio ({ onBack, onProfile, onFinish }) {
   const warehouse = useSessionStore((state) => state.bodega)
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
   const sessionId = useSessionStore((state) => state.sessionId)
@@ -119,7 +119,7 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
       notify(
         status === 'enviado'
           ? 'Enviado correctamente.'
-          : 'No hay credenciales configuradas en el backend: el envío quedó simulado.',
+          : 'No hay credenciales configuradas en el backend: el envío quedó simulado.'
       )
     } catch {
       notify('No pudimos enviar el reporte.')
@@ -142,9 +142,9 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
 
   if (!sessionId) {
     return (
-      <main className="report-screen">
-        <TopBar title="Reporte y envío" onBack={onBack} onProfile={onProfile} />
-        <div className="summary-empty">
+      <main className='report-screen'>
+        <TopBar title='Reporte y envío' onBack={onBack} onProfile={onProfile} />
+        <div className='summary-empty'>
           <ShieldCheck size={32} />
           <h1>No hay una sesión sincronizada</h1>
           <p>El reporte se genera desde el backend real; esta sesión no tiene un ID de servidor con el que pedirlo.</p>
@@ -157,17 +157,17 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
   const visibleRows = rows.slice(0, 8)
 
   return (
-    <main className="report-screen">
-      <TopBar title="Reporte y envío" onBack={onBack} onProfile={onProfile} />
-      <div className="report-layout">
-        <section className="preview-column">
-          <div className="report-heading">
-            <span className="eyebrow">{signature ? 'Acta firmada' : 'Acta sin firmar'}</span>
+    <main className='report-screen'>
+      <TopBar title='Reporte y envío' onBack={onBack} onProfile={onProfile} />
+      <div className='report-layout'>
+        <section className='preview-column'>
+          <div className='report-heading'>
+            <span className='eyebrow'>{signature ? 'Acta firmada' : 'Acta sin firmar'}</span>
             <h1>Tu reporte está listo</h1>
             <p>Generado por el backend a partir de los datos reales de esta sesión.</p>
           </div>
 
-          <div className="segmented alcance-switch" role="tablist" aria-label="Qué incluir en el reporte">
+          <div className='segmented alcance-switch' role='tablist' aria-label='Qué incluir en el reporte'>
             {ALCANCES.map((option) => (
               <button
                 key={option.value}
@@ -180,12 +180,12 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
             ))}
           </div>
 
-          {loading && <p className="preconteo-status">Generando reporte…</p>}
-          {error && <p className="mapa-error">{error}</p>}
+          {loading && <p className='preconteo-status'>Generando reporte…</p>}
+          {error && <p className='mapa-error'>{error}</p>}
           {!loading && !error && summary && (
-            <div className="pdf-stage">
-              <div className="pdf-shadow-sheet" />
-              <article className="pdf-preview">
+            <div className='pdf-stage'>
+              <div className='pdf-shadow-sheet' />
+              <article className='pdf-preview'>
                 <header>
                   <Logo light />
                   <div>
@@ -193,13 +193,13 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
                     <span>{signature ? new Date(signature.fin).toLocaleString('es-CO') : 'Sin firmar'}</span>
                   </div>
                 </header>
-                <div className="pdf-body">
-                  <div className="pdf-title">
+                <div className='pdf-body'>
+                  <div className='pdf-title'>
                     <span>REPORTE DE EXISTENCIAS</span>
                     <h2>{bodegaLabel}</h2>
                     <p>Toma física asistida por voz · Sesión {sessionId.slice(0, 8)}</p>
                   </div>
-                  <div className="pdf-stats">
+                  <div className='pdf-stats'>
                     <span><strong>{summary.contadas}</strong> Referencias</span>
                     <span><strong>{summary.tiempo_min} min</strong> Duración</span>
                     <span><strong>{summary.corregidos}</strong> Correcciones</span>
@@ -210,15 +210,17 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
                       {visibleRows.map((row) => (
                         <tr key={row.articulo} className={row.fisico == null ? 'pendiente' : ''}>
                           <td>{row.articulo}</td>
-                          {row.fisico == null ? (
-                            <td colSpan={3}>Sin contar</td>
-                          ) : (
-                            <>
-                              <td>{row.fisico}</td>
-                              <td>{row.sistema}</td>
-                              <td>{row.delta > 0 ? '+' : ''}{row.delta.toFixed(2)}</td>
-                            </>
-                          )}
+                          {row.fisico == null
+                            ? (
+                              <td colSpan={3}>Sin contar</td>
+                              )
+                            : (
+                              <>
+                                <td>{row.fisico}</td>
+                                <td>{row.sistema}</td>
+                                <td>{row.delta > 0 ? '+' : ''}{row.delta.toFixed(2)}</td>
+                              </>
+                              )}
                         </tr>
                       ))}
                       {!visibleRows.length && (
@@ -226,16 +228,16 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
                       )}
                     </tbody>
                   </table>
-                  <div className="pdf-signature">
+                  <div className='pdf-signature'>
                     <div>
                       <span>{signature ? 'Firma digital verificada' : 'Sesión aún no firmada'}</span>
-                      {signature && <strong className="signature-hash">{signature.hash_firma.slice(0, 24)}…</strong>}
+                      {signature && <strong className='signature-hash'>{signature.hash_firma.slice(0, 24)}…</strong>}
                     </div>
                     {user.firma && signature && (
                       <img
                         className={`firma-stamp ${stamped ? 'firma-stamp-settled' : 'firma-stamp-animating'}`}
                         src={user.firma}
-                        alt="Firma del responsable"
+                        alt='Firma del responsable'
                         onAnimationEnd={(event) => {
                           if (event.animationName === 'firma-trazo') setStamped(true)
                         }}
@@ -246,95 +248,95 @@ export default function ReporteEnvio({ onBack, onProfile, onFinish }) {
               </article>
             </div>
           )}
-          {!stamped && <p className="preconteo-status">Estampando tu firma…</p>}
+          {!stamped && <p className='preconteo-status'>Estampando tu firma…</p>}
         </section>
-        <aside className="delivery-column">
-          <section className="delivery-card">
-            <div className="delivery-card-header">
+        <aside className='delivery-column'>
+          <section className='delivery-card'>
+            <div className='delivery-card-header'>
               <div>
-                <span className="eyebrow">Archivos</span>
+                <span className='eyebrow'>Archivos</span>
                 <h2>Descargar formatos</h2>
               </div>
               {archivos && (
                 <button
-                  type="button"
-                  className="report-delete-button"
+                  type='button'
+                  className='report-delete-button'
                   onClick={borrarArchivos}
                   disabled={deleting}
-                  aria-label="Borrar archivos generados"
+                  aria-label='Borrar archivos generados'
                 >
                   <Trash2 size={16} /> {deleting ? 'Borrando…' : 'Borrar'}
                 </button>
               )}
             </div>
-            <div className="format-list">
+            <div className='format-list'>
               {formats.map(({ key, label, caption, icon: Icon }) => (
                 <a
                   key={key}
                   className={`format-download ${!archivos?.[key] || !stamped ? 'disabled' : ''}`}
                   href={archivos?.[key] && stamped ? `${API_URL}${archivos[key]}` : undefined}
-                  target="_blank"
-                  rel="noreferrer"
+                  target='_blank'
+                  rel='noreferrer'
                 >
-                  <span className="format-icon"><Icon size={23} /></span>
+                  <span className='format-icon'><Icon size={23} /></span>
                   <span><strong>{label}</strong><small>{caption}</small></span>
                   <Download size={20} />
                 </a>
               ))}
             </div>
             {!archivos && (
-              <button type="button" className="report-shortcut" onClick={() => cambiarAlcance(alcance)} disabled={generating}>
+              <button type='button' className='report-shortcut' onClick={() => cambiarAlcance(alcance)} disabled={generating}>
                 {generating ? 'Generando…' : 'Generar de nuevo'}
               </button>
             )}
           </section>
-          <section className="delivery-card">
-            <span className="eyebrow">Compartir</span>
+          <section className='delivery-card'>
+            <span className='eyebrow'>Compartir</span>
             <h2>Enviar el acta</h2>
-            <label className="report-email-field">
+            <label className='report-email-field'>
               <Mail size={16} />
               <input
-                type="email"
+                type='email'
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="correo@empresa.com"
+                placeholder='correo@empresa.com'
               />
-              <button type="button" onClick={() => send('email', email)} disabled={!email || !!sending || !stamped}>
+              <button type='button' onClick={() => send('email', email)} disabled={!email || !!sending || !stamped}>
                 {sending === 'email' ? 'Enviando…' : 'Enviar'}
               </button>
             </label>
-            <div className="channel-grid channel-grid-3">
-              <button className="channel telegram" onClick={() => send('telegram')} disabled={!!sending || !stamped}>
+            <div className='channel-grid channel-grid-3'>
+              <button className='channel telegram' onClick={() => send('telegram')} disabled={!!sending || !stamped}>
                 <span><Send size={24} /></span>{sending === 'telegram' ? 'Enviando…' : 'Telegram'}
               </button>
-              <button className="channel unavailable" disabled>
+              <button className='channel unavailable' disabled>
                 <span><MessageCircleMore size={24} /></span>WhatsApp<small>Próximamente</small>
               </button>
-              <button className="channel unavailable" disabled>
+              <button className='channel unavailable' disabled>
                 <span><Users size={24} /></span>Teams<small>Próximamente</small>
               </button>
             </div>
             {deliveries.telegram && (
-              <div className="sent-confirmation">
+              <div className='sent-confirmation'>
                 <CheckCircle2 size={22} />
                 <span><strong>Telegram:</strong> {deliveries.telegram}</span>
               </div>
             )}
             {deliveries.email && (
-              <div className="sent-confirmation">
+              <div className='sent-confirmation'>
                 <CheckCircle2 size={22} />
                 <span><strong>Correo:</strong> {deliveries.email}</span>
               </div>
             )}
           </section>
-          <div className="report-finish">
+          <div className='report-finish'>
             <ShieldCheck size={18} />
             <p>La toma firmada permanece disponible en tu historial.</p>
-            <Button variant="secondary" onClick={onFinish} icon={ArrowRight}>Ver historial</Button>
+            <Button variant='secondary' onClick={onFinish} icon={ArrowRight}>Ver historial</Button>
           </div>
         </aside>
       </div>
-      <Toast message={toast} type="info" />
+      <Toast message={toast} type='info' />
     </main>
   )
 }

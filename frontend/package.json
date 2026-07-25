@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "vite build"
+    "check": "vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "face-api.js": "^0.22.2",
@@ -19,6 +21,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "neostandard": "^0.13.0",
     "vite": "^6.0.5",
     "vite-plugin-pwa": "^0.21.1"
   }
