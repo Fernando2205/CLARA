@@ -29,6 +29,7 @@ clara/
 │   │   ├── screens/               # P0..P6 (una carpeta por pantalla, ver guía UI)
 │   │   │   ├── Identificacion/  SeleccionBodega/  Captura/
 │   │   │   ├── ResumenFirma/  ReporteEnvio/  Perfil/
+│   │   │   ├── Registro/  PreConteo/  MapaBodega/   # añadidas en desarrollo, ver §7.6
 │   │   ├── components/            # según inventario §6 de la guía UI
 │   │   ├── stores/session.js      # Zustand: sesión de conteo
 │   │   ├── stores/auth.js         # Zustand: usuario identificado
@@ -236,6 +237,18 @@ Estado: `{sesionId, bodega, modo, registros[], pendientesSync[], totalRefs, cont
 `P0 Identificación → P1 Bodega → P2 Captura ⇄ (tarjeta registro/alerta) → P4 Resumen+Firma → P5 Reporte+Envío → P6 Perfil`.
 Regla: desde P2 siempre se puede volver a P1 (cambiar bodega guarda la sesión abierta). Tras firmar (P4→P5), la sesión pasa a solo-lectura.
 
+### 7.6 Pantallas añadidas en desarrollo (fuera del set original P0-P6)
+
+No estaban en el plan original ni en la guía UI; se agregaron durante la construcción como necesidades reales del flujo. Se documentan aquí para que el alcance quede explícito y no se lean como desviación silenciosa:
+
+| Pantalla | Se ubica | Qué resuelve |
+|---|---|---|
+| `Registro/` | Antes de P0, solo si el operario no tiene cuenta | Alta de usuario nuevo: nombre, cédula, correo, PIN, enrolamiento facial y firma. **No es CRUD de usuarios** (eso sigue fuera de alcance, §9): solo permite *crear* una cuenta para poder identificarse en P0; no hay edición ni borrado. Necesaria porque el plan solo sembraba 3 usuarios demo y el equipo necesitaba dar de alta gente real durante las pruebas. |
+| `PreConteo/` | Entre P1 (Bodega) y P2 (Captura) | Muestra el catálogo completo de la bodega elegida antes de empezar a dictar — referencias totales, cuántas ya están contadas en la sesión, buscador. Le da al operario una vista previa de "qué voy a contar" antes de tomar el micrófono; no reemplaza P2, solo la antecede. |
+| `MapaBodega/` | Accesible desde P2 (vista alterna al panel de sesión) | Mapa esquemático en vivo de la bodega por zonas/categorías (poll cada 5 s contra `/inventory`), con el mismo código de color de estado (pendiente/ok/warn/bad) que P2. Es una visualización alternativa del avance de conteo, pensada para verlo desde lejos (ej. un supervisor) mientras el operario cuenta. |
+
+Ninguna de las tres reemplaza una pantalla del set P0-P6 original; son capas adicionales sobre el mismo modelo de datos y las mismas reglas V1-V7.
+
 ---
 
 ## 8 · Orden de construcción (para agentes: cada fase deja algo demostrable)
@@ -262,7 +275,7 @@ Regla: desde P2 siempre se puede volver a P1 (cambiar bodega guarda la sesión a
 
 ## 9 · Fuera de alcance (NO implementar aunque parezca fácil)
 
-Integración real con ERP · gestión de usuarios (CRUD) · recuperación de contraseña · multi-idioma · notificaciones push · WhatsApp/Teams reales (solo botones "próximamente") · edición de catálogo · modo requisición completo (solo el selector y el descuento simple contra disponible, si sobra tiempo).
+Integración real con ERP · gestión de usuarios (CRUD — la pantalla `Registro/` del §7.6 solo cubre alta/creación, no edición ni borrado) · recuperación de contraseña · multi-idioma · notificaciones push · WhatsApp/Teams reales (solo botones "próximamente") · edición de catálogo · modo requisición completo (solo el selector y el descuento simple contra disponible, si sobra tiempo).
 
 ---
 

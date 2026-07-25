@@ -167,6 +167,46 @@
 ### P6 — Perfil (`screens/Perfil/`)
 Historial de tomas firmadas (cards: fecha, bodega, métricas, botón "re-generar reporte"). Header con datos del usuario y su bodega asignada. *Vista supervisor (solo si sobra tiempo): misma pantalla + sección "Registros por revisar" (los de confianza < 0.6 del equipo).*
 
+### Pantallas añadidas en desarrollo (fuera del set P0-P6 original — ver plan MVP §7.6)
+
+No estaban en la spec original; se documentan aquí para que su diseño quede alineado al resto del sistema visual. Ninguna reemplaza a P0-P6, son capas adicionales.
+
+#### Registro — alta de usuario (`screens/Registro/`)
+| Elemento | Spec |
+|---|---|
+| Cuándo aparece | Antes de P0, solo si el operario no tiene cuenta — enlace "Crear cuenta" desde el fallback PIN de P0 |
+| Layout | Columna única centrada, máx 560 px (mismo patrón que P0/P1 sin sesión activa), fondo `--cs-nube` |
+| Header | Wordmark CLARA (`Logo`) centrado |
+| Campos | Nombre completo, cédula, correo — inputs 48 px estándar |
+| PIN | `TecladoPin`/`PinPad` de 4 dígitos, mismo componente que el fallback de P0 |
+| Captura de rostro | Círculo/marco de cámara (mismo tratamiento visual que P0), botón secundario "Capturar rostro"; al lograrlo: caption "Rostro listo ✓ (se guarda solo en este dispositivo)" — refuerza el argumento de privacidad |
+| Firma | `SignatureField` (mismo componente que P4), 420×150 |
+| Acción | `Crear cuenta` (primario, amarillo, disabled hasta completar los 5 requisitos: nombre, cédula, correo, PIN completo, rostro capturado) |
+| Salida | Enlace secundario "Volver al reconocimiento facial" (regresa a P0) |
+
+#### PreConteo — vista previa del catálogo (`screens/PreConteo/`)
+| Elemento | Spec |
+|---|---|
+| Cuándo aparece | Entre P1 (Bodega) y P2 (Captura), antes de tocar el micrófono |
+| Header | Barra azul con nombre de bodega, `onBack` a P1 |
+| Métricas | 3 `StatTile`: referencias totales, ya contadas en la sesión, por verificar |
+| Buscador | Input con icono lupa, filtra la lista en vivo por nombre |
+| Lista | Tabla simple (producto + icono de categoría · saldo en sistema · estado `Contado`/`Pendiente` en `Badge`) |
+| Pie | Fijo: "N referencias listas para contar" + `BotonPrimario` "Iniciar conteo" (lleva a P2) |
+| Propósito | Que el operario vea qué va a contar antes de empezar a hablar — no sustituye P2, es un paso previo informativo |
+
+#### MapaBodega — mapa en vivo por zonas (`screens/MapaBodega/`)
+| Elemento | Spec |
+|---|---|
+| Cuándo aparece | Accesible desde P2 como vista alterna al panel de sesión (misma sesión, mismo dato en vivo) |
+| Header | Barra azul "Mapa · {bodega}", `onBack` a P2 |
+| Métricas | 4 `StatTile`: % de avance, contadas/total, pendientes, requieren revisión |
+| Cuerpo | Mapa esquemático tipo treemap: zonas por categoría de producto, tamaño proporcional a cantidad de referencias; cada referencia es un "tick" de color según estado |
+| Código de color | Mismo semántico que P2/P4: gris pendiente, `--ok` coincide con sistema, `--alerta` diferencia leve, `--error` anomalía |
+| Actualización | Poll cada 5 s contra `/inventory`; al cambiar el estado de una zona, pulso breve (1.5 s) para llamar la atención — mismo principio que el destello celeste de `RegistroItem` en P2 |
+| Leyenda | Fila inferior fija con los 4 estados (icono + palabra, nunca solo color, regla §2.3) |
+| Propósito | Vista de alcance/supervisión a distancia mientras el operario cuenta con voz — pensada para verse en una pantalla secundaria o por un supervisor |
+
 ---
 
 ## 6 · Inventario de componentes (`src/components/`)
