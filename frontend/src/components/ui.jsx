@@ -208,7 +208,7 @@ export function PinPad ({ value, onChange, length = 4 }) {
   const backspace = () => onChange(value.slice(0, -1))
 
   return (
-    <>
+    <div className='pin-pad'>
       <div className='pin-dots' aria-label={`${value.length} de ${length} dígitos`}>
         {Array.from({ length }).map((_, dot) => (
           <span className={value.length > dot ? 'filled' : ''} key={dot} />
@@ -224,7 +224,7 @@ export function PinPad ({ value, onChange, length = 4 }) {
           <Delete size={24} />
         </button>
       </div>
-    </>
+    </div>
   )
 }
 

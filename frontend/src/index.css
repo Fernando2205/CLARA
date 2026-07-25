@@ -610,6 +610,7 @@ p { font-size: 15px; line-height: 1.55; }
 }
 .pin-profile div { display: flex; flex-direction: column; }
 .pin-profile span { color: rgba(51,51,51,.62); font-size: 12px; }
+.pin-pad { display: flex; flex-direction: column; align-items: center; }
 .pin-dots { margin: 22px 0; display: flex; gap: 18px; }
 .pin-dots span { width: 15px; height: 15px; border: 2px solid var(--cs-azul); border-radius: 50%; transition: 180ms; }
 .pin-dots .filled { background: var(--cs-azul); transform: scale(1.08); }
@@ -651,7 +652,7 @@ p { font-size: 15px; line-height: 1.55; }
 .register-shell { width: clamp(320px, 90vw, 560px); }
 .register-form { width: 100%; margin-top: 18px; display: grid; gap: 22px; }
 .register-fields { display: grid; gap: 14px; }
-.register-pin { display: grid; gap: 8px; justify-items: start; }
+.register-pin { display: grid; gap: 8px; justify-items: center; text-align: center; }
 .register-pin > span { font-size: 11px; font-weight: 600; color: rgba(51,51,51,.72); }
 .register-pin .pin-grid { grid-template-columns: repeat(3, 52px); }
 .register-pin .pin-grid button { width: 52px; height: 52px; font-size: 18px; }
