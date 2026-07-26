@@ -1,0 +1,9 @@
+# Railway construye con Nixpacks. Este archivo agrega las librerías de
+# sistema que necesita WeasyPrint (Pango, cairo) para generar el PDF con la
+# plantilla completa. Sin esto, el backend igual funciona: cae automáticamente
+# al generador de respaldo (reportlab) si WeasyPrint no puede cargar.
+[phases.setup]
+aptPkgs = ["...", "libpango-1.0-0", "libpangocairo-1.0-0", "libcairo2", "libgdk-pixbuf2.0-0", "shared-mime-info", "fonts-liberation"]
+
+[start]
+cmd = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
