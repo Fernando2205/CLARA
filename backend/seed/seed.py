@@ -34,23 +34,24 @@ def seed_if_empty() -> dict[str, int]:
             connection.executemany(
                 """
                 INSERT INTO usuarios
-                    (id, nombre, cargo, bodega_asignada, turno, pin, password_hash)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (id, nombre, cargo, bodega_asignada, turno, pin, password_hash, cedula, correo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     (
+                        # Cedula igual al PIN a propósito: en el demo es más
+                        # rápido escribir "1234" una sola vez que el nombre.
                         1, "Sofía Valencia", "Auxiliar de Cocina 2",
                         "STOCK RESTAURANTE FUENTES AYB", "Mañana · 06:00–14:00",
-                        "1234", password_hash("1234"),
+                        "1234", password_hash("1234"), "1234", None,
                     ),
                     (
-                        2, "Carlos Ramírez", "Jefe de Cocina",
-                        "STOCK RESTAURANTE FUENTES AYB", "Mañana",
-                        "2468", password_hash("2468"),
-                    ),
-                    (
-                        3, "Piedad Gómez", "Administradora",
-                        None, "Administrativo", "4321", password_hash("4321"),
+                        # Cuenta de demostración: la persona que despliega el
+                        # demo la comparte para que cualquiera pueda entrar a
+                        # probar CLARA sin registrarse.
+                        4, "Test", "Cuenta demo",
+                        None, "Invitado", "1111", password_hash("1111"),
+                        "0123", "test@test.com",
                     ),
                 ],
             )
