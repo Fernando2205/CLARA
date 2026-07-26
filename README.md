@@ -16,6 +16,7 @@ Proyecto del **Reto 4 · "Captura inteligente en operaciones de cocina"**, Hacka
 
 - [El problema](#el-problema)
 - [Pruébalo ahora](#pruébalo-ahora)
+- [Capturas](#capturas)
 - [Qué lo hace diferente](#qué-lo-hace-diferente)
 - [Cómo funciona](#cómo-funciona)
 - [Equipo](#equipo)
@@ -35,7 +36,7 @@ Ninguno de estos es un error de conteo: son errores de _transcripción_ acumulad
 
 ## Pruébalo ahora
 
-**Demo en vivo:** _(agregar la URL cuando el despliegue esté disponible)_
+**Demo en vivo:** [somosclara.tech](https://somosclara.tech)
 
 ¿Prefieres correrlo en tu máquina? La guía completa está en [Ejecutar localmente](#ejecutar-localmente); toma menos de cinco minutos.
 
@@ -58,6 +59,20 @@ Un recorrido guiado de dos minutos:
 4. Prueba una anomalía, por ejemplo _"quedan cero gaseosas"_ — CLARA debe preguntar antes de guardar.
 5. Cierra la toma, firma con tu PIN y genera el acta en PDF, XLSX o CSV desde el resumen.
 6. Prueba compartir el acta con los botones de compartir de cada formato — funcionan de verdad, con el panel nativo de compartir del dispositivo. El envío por correo, en cambio, queda **simulado**: por alcance del MVP no está habilitado para enviar a cualquier dirección.
+
+## Capturas
+
+CLARA ya está en producción en **[somosclara.tech](https://somosclara.tech)** — instálala como aplicación desde el navegador (computador, tablet o celular) y pruébala tú mismo.
+
+<p align="center">
+  <img src="docs/capturas/01-escritorio.png" alt="CLARA en el navegador de escritorio, con el aviso del navegador para instalarla como aplicación" width="720"><br>
+  <sub>Escritorio — el navegador ofrece instalarla como aplicación</sub>
+</p>
+
+<p align="center">
+  <img src="docs/capturas/02-movil-instalar.png" alt="CLARA en un celular Android, con el diálogo nativo de Chrome para instalar la app" width="280"><br>
+  <sub>Celular — el mismo diálogo de instalación; en tablet se ve igual</sub>
+</p>
 
 ## Qué lo hace diferente
 
