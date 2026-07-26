@@ -1371,9 +1371,9 @@ p { font-size: 15px; line-height: 1.55; }
 .summary-heading p, .report-heading p, .history-heading p { color: rgba(51,51,51,.62); }
 .stats-row { margin: 20px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
 .stat-tile { min-height: 108px; padding: 15px; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; border: 1px solid var(--cs-borde); border-radius: var(--r-card); background: white; box-shadow: var(--sombra-card); }
-.stat-icon { grid-row: 1 / span 2; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: var(--cs-azul); background: #e8f4fb; }
-.stat-tile strong { align-self: end; color: var(--cs-azul-dk); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
-.stat-tile > span:last-child { align-self: start; color: rgba(51,51,51,.57); font-size: 10px; }
+.stat-icon { grid-column: 1; grid-row: 1 / span 2; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: var(--cs-azul); background: #e8f4fb; }
+.stat-tile strong { grid-column: 2; grid-row: 1; align-self: end; color: var(--cs-azul-dk); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat-tile > span:last-child { grid-column: 2; grid-row: 2; align-self: start; color: rgba(51,51,51,.57); font-size: 10px; }
 .differences-card { overflow: hidden; border: 1px solid var(--cs-borde); border-radius: var(--r-card); background: white; box-shadow: var(--sombra-card); }
 .section-heading-row { padding: 17px 19px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--cs-borde); }
 .section-heading-row h2 { margin-top: 3px; color: var(--cs-azul-dk); }
@@ -1718,6 +1718,7 @@ p { font-size: 15px; line-height: 1.55; }
   .stats-row { grid-template-columns: repeat(3, 1fr); overflow-x: auto; }
   .stat-tile { min-width: 135px; grid-template-columns: 1fr; align-content: center; }
   .stat-icon { display: none; }
+  .stat-tile strong, .stat-tile > span:last-child { grid-column: 1; }
   .difference-row { padding: 0 10px; grid-template-columns: 1.4fr .55fr .55fr .55fr; font-size: 10px; }
   .section-heading-row { align-items: flex-start; flex-direction: column; }
   .signature-panel { min-height: auto; padding: 28px 20px 38px; border: 0; border-top: 1px solid var(--cs-borde); }
