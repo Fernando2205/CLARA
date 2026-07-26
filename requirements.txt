@@ -1,0 +1,4 @@
+# Heroku (buildpack heroku/python) busca requirements.txt en la raíz del
+# repo, pero el backend vive en backend/ (monorepo con el frontend). Este
+# archivo solo reexporta el real para que el buildpack detecte la app.
+-r backend/requirements.txt
