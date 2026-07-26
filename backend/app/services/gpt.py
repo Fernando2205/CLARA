@@ -49,7 +49,7 @@ UNITS: dict[str, Literal[
     "kilo": "kilos", "kilos": "kilos", "kilogramo": "kilos",
     "kilogramos": "kilos", "gramo": "gramos", "gramos": "gramos",
     "litro": "litros", "litros": "litros", "porcion": "porciones",
-    "porciones": "porciones", "lt": "litros", "lts": "litros",
+    "porciones": "porciones", "lt": "litros", "lts": "litros", "l": "litros",
     "kg": "kilos", "kgs": "kilos", "gr": "gramos",
     "boteya": "botellas", "boteyas": "botellas",
 }
@@ -64,7 +64,13 @@ STOP_WORDS = {
     "suma", "sume", "sumar", "marca", "marque", "marcar", "quiero",
     "necesito", "puede", "puedes", "podria", "podrias", "podemos",
     "ayuda", "ayudas", "ayudar", "quieres", "por", "favor", "porfa",
-    "arroba", "libra", "docena", *UNITS.keys(), *SMALL_NUMBERS.keys(), *TENS.keys(),
+    "arroba", "libra", "docena", "ese", "esa", "esos", "esas", "este",
+    "esta", "estos", "estas", "eso", "esto", "momento", "ahorita", "ahora",
+    "aqui", "aca", "alli", "alla", "ahi", "ya", "todavia", "aun",
+    "pues", "digo", "osea", "entonces", "sino", "mejor", "eh", "ah",
+    "mira", "oye", "sabes", "sabe", "disculpa", "disculpe", "vale",
+    "dale", "creo", "tipo", "digamos",
+    *UNITS.keys(), *SMALL_NUMBERS.keys(), *TENS.keys(),
 }
 
 

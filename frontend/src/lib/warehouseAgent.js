@@ -107,6 +107,9 @@ const COMMAND_WORDS = new Set([
   'queda', 'quedan', 'quedo', 'quedaron', 'son', 'es', 'da', 'dan', 'dio',
   'me', 'veo', 'vemos', 'existe', 'existen', 'conte', 'cuento', 'contamos',
   'encontre', 'encontramos',
+  'aqui', 'aca', 'alli', 'alla', 'ya', 'todavia', 'aun', 'pues', 'osea',
+  'ah', 'eh', 'mira', 'oye', 'sabes', 'sabe', 'disculpa', 'disculpe',
+  'vale', 'dale', 'creo', 'tipo', 'digamos',
 ])
 
 const UNIT_LABELS = {

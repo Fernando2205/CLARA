@@ -15,6 +15,12 @@ MATCH_NOISE_WORDS = {
     "necesito", "puede", "puedes", "podria", "podrias", "podemos",
     "ayuda", "ayudas", "ayudar", "quieres", "por", "favor", "porfa",
     "a", "de", "del", "el", "la", "los", "las", "un", "una", "unos", "unas",
+    "en", "ese", "esa", "esos", "esas", "este", "esta", "estos", "estas",
+    "eso", "esto", "momento", "ahorita", "ahora",
+    "aqui", "aca", "alli", "alla", "ahi", "ya", "todavia", "aun",
+    "pues", "digo", "osea", "entonces", "sino", "mejor", "eh", "ah",
+    "mira", "oye", "sabes", "sabe", "disculpa", "disculpe", "vale",
+    "dale", "creo", "tipo", "digamos",
 }
 
 
