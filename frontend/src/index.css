@@ -1857,7 +1857,7 @@ p { font-size: 15px; line-height: 1.55; }
   grid-template-columns: minmax(0, 1fr) 282px;
   align-items: stretch;
 }
-.mapa-floor-wrap { min-width: 0; padding: 14px; background: #f7fafc; }
+.mapa-floor-wrap { position: relative; min-width: 0; padding: 14px; background: #f7fafc; }
 .mapa-floor-toolbar {
   min-height: 34px;
   margin-bottom: 8px;
@@ -2480,6 +2480,20 @@ p { font-size: 15px; line-height: 1.55; }
   .mapa-visual-head { align-items: flex-start; flex-direction: column; }
   .mapa-overview-button { width: 100%; justify-content: center; }
   .mapa-floor-wrap { padding: 10px; overflow-x: auto; }
+  /* El plano es un mapa espacial de la bodega: no se puede comprimir a una
+     columna angosta sin perder el sentido, así que se desliza horizontal.
+     Este degradado avisa que hay más plano a la derecha (si no, el corte
+     al borde de la pantalla se ve como un error, no como algo deslizable). */
+  .mapa-floor-wrap::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 0;
+    bottom: 10px;
+    width: 28px;
+    background: linear-gradient(to right, transparent, #f7fafc);
+    pointer-events: none;
+  }
   .mapa-floor-toolbar { min-width: 720px; align-items: flex-start; flex-direction: column; }
   .mapa-floor { width: 720px; min-height: 440px; }
   .mapa-floor-grid { min-height: 366px; }
@@ -3156,6 +3170,9 @@ p { font-size: 15px; line-height: 1.55; }
 @media (max-width: 600px) {
   .warehouse-agent-dock { right: 0; bottom: 0; left: 0; }
   .warehouse-agent-launcher { margin: 0 12px 12px auto; min-width: 205px; }
+  /* El dock queda fijo abajo en pantallas chicas: sin este espacio, tapa el
+     final del contenido con scroll (ej. la sección "Toda la bodega" del Mapa). */
+  .mapa-layout { padding-bottom: 130px; }
   .warehouse-agent-panel {
     width: 100%;
     height: min(780px, 88dvh);
