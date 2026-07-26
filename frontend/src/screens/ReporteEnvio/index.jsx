@@ -6,9 +6,11 @@ import {
   FileBarChart2,
   FileSpreadsheet,
   FileText,
+  Loader2,
   Mail,
   MessageCircleMore,
   Send,
+  Share2,
   ShieldCheck,
   Trash2,
   Users,
@@ -64,10 +66,40 @@ export default function ReporteEnvio ({
   // falta animar el sello, se muestra siempre lista.
   const [stamped, setStamped] = useState(isHistorical || !user.firma || !signature)
   const [deleting, setDeleting] = useState(false)
+  const [sharing, setSharing] = useState('')
+  // Web Share API: solo algunos navegadores (sobre todo móviles) pueden
+  // compartir ARCHIVOS con el panel nativo del sistema, no solo texto/URL.
+  const canShareFiles = typeof navigator !== 'undefined' && typeof navigator.canShare === 'function'
 
   const notify = (message) => {
     setToast(message)
     window.setTimeout(() => setToast(''), 3200)
+  }
+
+  const shareFile = async (key, label) => {
+    const url = archivos?.[key]
+    if (!url) return
+    setSharing(key)
+    try {
+      const response = await fetch(`${API_URL}${url}`)
+      if (!response.ok) throw new Error('No se pudo descargar el archivo')
+      const blob = await response.blob()
+      const filename = url.split('/').pop()
+      const file = new File([blob], filename, { type: blob.type })
+      if (!navigator.canShare({ files: [file] })) {
+        notify('Este dispositivo no puede compartir este tipo de archivo.')
+        return
+      }
+      await navigator.share({
+        files: [file],
+        title: `Acta de inventario · ${bodegaLabel}`,
+        text: `Acta de inventario (${label}) generada con CLARA.`,
+      })
+    } catch (error) {
+      if (error?.name !== 'AbortError') notify('No pudimos compartir el archivo.')
+    } finally {
+      setSharing('')
+    }
   }
 
   useEffect(() => {
@@ -285,19 +317,35 @@ export default function ReporteEnvio ({
               )}
             </div>
             <div className='format-list'>
-              {formats.map(({ key, label, caption, icon: Icon }) => (
-                <a
-                  key={key}
-                  className={`format-download ${!archivos?.[key] || !stamped ? 'disabled' : ''}`}
-                  href={archivos?.[key] && stamped ? `${API_URL}${archivos[key]}` : undefined}
-                  target='_blank'
-                  rel='noreferrer'
-                >
-                  <span className='format-icon'><Icon size={23} /></span>
-                  <span><strong>{label}</strong><small>{caption}</small></span>
-                  <Download size={20} />
-                </a>
-              ))}
+              {formats.map(({ key, label, caption, icon: Icon }) => {
+                const ready = Boolean(archivos?.[key]) && stamped
+                return (
+                  <div key={key} className={`format-download ${!ready ? 'disabled' : ''}`}>
+                    <span className='format-icon'><Icon size={23} /></span>
+                    <span><strong>{label}</strong><small>{caption}</small></span>
+                    <span className='format-actions'>
+                      {canShareFiles && (
+                        <button
+                          type='button'
+                          onClick={() => shareFile(key, label)}
+                          disabled={!ready || sharing === key}
+                          aria-label={`Compartir ${label}`}
+                        >
+                          {sharing === key ? <Loader2 size={17} className='spin' /> : <Share2 size={17} />}
+                        </button>
+                      )}
+                      <a
+                        href={ready ? `${API_URL}${archivos[key]}` : undefined}
+                        target='_blank'
+                        rel='noreferrer'
+                        aria-label={`Descargar ${label}`}
+                      >
+                        <Download size={18} />
+                      </a>
+                    </span>
+                  </div>
+                )
+              })}
             </div>
             {!archivos && (
               <button type='button' className='report-shortcut' onClick={() => cambiarAlcance(alcance)} disabled={generating}>

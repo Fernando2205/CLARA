@@ -1,4 +1,5 @@
 import logging
+import mimetypes
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,6 +13,13 @@ from .db import connect
 from .routers import assistant, auth, extract, inventory, report, sessions, speech, transcribe, validate
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
+# StaticFiles adivina el content-type con mimetypes.guess_type(), que en
+# Windows lee del registro del sistema y devuelve application/vnd.ms-excel
+# para .csv en vez de text/csv (afecta la Web Share API del frontend).
+# Se fija explícito para que el archivo servido sea correcto sin importar
+# el sistema operativo donde corra el backend.
+mimetypes.add_type("text/csv", ".csv")
 
 settings = get_settings()
 settings.generated_dir.mkdir(parents=True, exist_ok=True)
