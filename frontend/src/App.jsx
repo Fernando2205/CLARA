@@ -26,7 +26,12 @@ function SignOutSplash ({ onLogin }) {
 const screens = ['identificacion', 'registro', 'bodega', 'mapa', 'preconteo', 'captura', 'resumen', 'reporte', 'perfil']
 
 export default function App () {
-  const [screen, setScreen] = useState('identificacion')
+  // Si ya había una sesión guardada (stores/auth.js persiste en
+  // localStorage), una recarga de página no debe mandar de vuelta a
+  // identificarse — arranca directo en la selección de bodega.
+  const [screen, setScreen] = useState(() => (
+    useAuthStore.getState().authenticated ? 'bodega' : 'identificacion'
+  ))
   const [previous, setPrevious] = useState('bodega')
   const [autoStartVoice, setAutoStartVoice] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
