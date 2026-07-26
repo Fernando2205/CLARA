@@ -33,8 +33,12 @@ export default function App () {
     useAuthStore.getState().authenticated ? 'bodega' : 'identificacion'
   ))
   const [previous, setPrevious] = useState('bodega')
+  const [resumenFrom, setResumenFrom] = useState('captura')
   const [autoStartVoice, setAutoStartVoice] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  // Al reenviar una toma firmada desde el historial (Perfil), P5 debe
+  // trabajar sobre ESA sesión pasada, no la activa del store.
+  const [reportOverride, setReportOverride] = useState(null)
   const signOut = useAuthStore((state) => state.logout)
   const reset = useSessionStore((state) => state.reset)
 
@@ -71,6 +75,12 @@ export default function App () {
   const openProfile = () => {
     setPrevious(screen)
     go('perfil', 'forward')
+  }
+
+  const resendHistoricReport = (session) => {
+    setReportOverride(session)
+    setPrevious('perfil')
+    go('reporte', 'forward')
   }
 
   const handleSignOut = () => {
@@ -115,6 +125,7 @@ export default function App () {
               onBack={() => go('bodega', 'back')}
               onProfile={openProfile}
               onStart={() => go('preconteo')}
+              onClose={() => { setResumenFrom('mapa'); go('resumen') }}
             />
           )}
           {!signingOut && screen === 'preconteo' && (
@@ -126,7 +137,7 @@ export default function App () {
           )}
           {!signingOut && screen === 'captura' && (
             <Captura
-              onClose={() => go('resumen')}
+              onClose={() => { setResumenFrom('captura'); go('resumen') }}
               onReport={() => go('reporte')}
               onProfile={openProfile}
               onBack={() => go('bodega', 'back')}
@@ -136,22 +147,30 @@ export default function App () {
           )}
           {!signingOut && screen === 'resumen' && (
             <ResumenFirma
-              onBack={() => go('captura', 'back')}
+              onBack={() => go(resumenFrom, 'back')}
               onContinue={() => go('reporte')}
               onProfile={openProfile}
             />
           )}
           {!signingOut && screen === 'reporte' && (
             <ReporteEnvio
-              onBack={() => go('resumen', 'back')}
+              onBack={() => {
+                const backTo = reportOverride ? 'perfil' : 'resumen'
+                setReportOverride(null)
+                go(backTo, 'back')
+              }}
               onProfile={openProfile}
-              onFinish={() => go('perfil')}
+              onFinish={() => { setReportOverride(null); go('perfil') }}
+              sessionIdOverride={reportOverride?.sessionId}
+              warehouseOverride={reportOverride?.warehouse}
+              bodegaLabelOverride={reportOverride?.bodegaLabel}
             />
           )}
           {!signingOut && screen === 'perfil' && (
             <Perfil
               onHome={() => go(previous === 'perfil' ? 'bodega' : previous, 'back')}
               onSignOut={handleSignOut}
+              onResend={resendHistoricReport}
             />
           )}
         </div>

@@ -188,7 +188,7 @@ function ZoneCard ({ category, active, onSelect }) {
   )
 }
 
-export default function MapaBodega ({ onBack, onProfile, onStart }) {
+export default function MapaBodega ({ onBack, onProfile, onStart, onClose }) {
   const warehouse = useSessionStore((state) => state.bodega)
   const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
   const sessionId = useSessionStore((state) => state.sessionId)
@@ -392,6 +392,11 @@ export default function MapaBodega ({ onBack, onProfile, onStart }) {
             <p>Consulta el saldo registrado y compáralo con las cantidades contadas.</p>
           </div>
           <div className='mapa-command-actions'>
+            {onClose && sessionId && records.length > 0 && (
+              <Button variant='secondary' onClick={onClose}>
+                Cerrar y firmar
+              </Button>
+            )}
             {onStart && (
               <Button icon={ArrowRight} onClick={onStart}>
                 {sessionId ? 'Continuar conteo' : 'Iniciar conteo'}

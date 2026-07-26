@@ -10,6 +10,7 @@ import {
   LogOut,
   PenLine,
   ScanFace,
+  Send,
   SlidersHorizontal,
   Trash2,
   UserRound,
@@ -30,7 +31,7 @@ const WAREHOUSE_LABELS = {
   'STOCK KIOSCO PISCIGIROS AYB': 'Kiosco Piscigiros · AyB',
 }
 
-export default function Perfil ({ onHome, onSignOut }) {
+export default function Perfil ({ onHome, onSignOut, onResend }) {
   const user = useAuthStore((state) => state.user)
   const login = useAuthStore((state) => state.login)
   const [sound, setSound] = useState(true)
@@ -203,6 +204,22 @@ export default function Perfil ({ onHome, onSignOut }) {
                   >
                     {openingId === item.sesion_id ? 'Abriendo…' : 'Abrir PDF'}
                   </Button>
+                  {onResend && (
+                    <Button
+                      variant='ghost'
+                      icon={Send}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onResend({
+                          sessionId: item.sesion_id,
+                          warehouse: item.bodega,
+                          bodegaLabel: WAREHOUSE_LABELS[item.bodega] || item.bodega,
+                        })
+                      }}
+                    >
+                      Reenviar
+                    </Button>
+                  )}
                   <button
                     type='button'
                     className='history-card-delete'

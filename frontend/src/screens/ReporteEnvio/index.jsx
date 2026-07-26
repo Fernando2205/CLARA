@@ -30,11 +30,24 @@ const ALCANCES = [
   { value: 'faltantes', label: 'Solo faltantes' },
 ]
 
-export default function ReporteEnvio ({ onBack, onProfile, onFinish }) {
-  const warehouse = useSessionStore((state) => state.bodega)
-  const bodegaLabel = useSessionStore((state) => state.bodegaLabel)
-  const sessionId = useSessionStore((state) => state.sessionId)
+export default function ReporteEnvio ({
+  onBack,
+  onProfile,
+  onFinish,
+  sessionIdOverride,
+  warehouseOverride,
+  bodegaLabelOverride,
+}) {
+  // Reenvío desde el historial (Perfil): la sesión ya no es la activa del
+  // store, así que se puede pedir para cualquier toma firmada anterior.
+  const isHistorical = Boolean(sessionIdOverride)
+  const storeWarehouse = useSessionStore((state) => state.bodega)
+  const storeBodegaLabel = useSessionStore((state) => state.bodegaLabel)
+  const storeSessionId = useSessionStore((state) => state.sessionId)
   const signature = useSessionStore((state) => state.signature)
+  const warehouse = warehouseOverride || storeWarehouse
+  const bodegaLabel = bodegaLabelOverride || storeBodegaLabel
+  const sessionId = sessionIdOverride || storeSessionId
   const user = useAuthStore((state) => state.user)
   const [summary, setSummary] = useState(null)
   const [inventory, setInventory] = useState(null)
@@ -47,7 +60,9 @@ export default function ReporteEnvio ({ onBack, onProfile, onFinish }) {
   const [sending, setSending] = useState('')
   const [deliveries, setDeliveries] = useState({})
   const [toast, setToast] = useState('')
-  const [stamped, setStamped] = useState(!user.firma || !signature)
+  // Una toma del historial ya está firmada del lado del servidor: no hace
+  // falta animar el sello, se muestra siempre lista.
+  const [stamped, setStamped] = useState(isHistorical || !user.firma || !signature)
   const [deleting, setDeleting] = useState(false)
 
   const notify = (message) => {
@@ -162,7 +177,7 @@ export default function ReporteEnvio ({ onBack, onProfile, onFinish }) {
       <div className='report-layout'>
         <section className='preview-column'>
           <div className='report-heading'>
-            <span className='eyebrow'>{signature ? 'Acta firmada' : 'Acta sin firmar'}</span>
+            <span className='eyebrow'>{isHistorical || signature ? 'Acta firmada' : 'Acta sin firmar'}</span>
             <h1>Tu reporte está listo</h1>
             <p>Generado por el backend a partir de los datos reales de esta sesión.</p>
           </div>
@@ -230,10 +245,10 @@ export default function ReporteEnvio ({ onBack, onProfile, onFinish }) {
                   </table>
                   <div className='pdf-signature'>
                     <div>
-                      <span>{signature ? 'Firma digital verificada' : 'Sesión aún no firmada'}</span>
+                      <span>{isHistorical || signature ? 'Firma digital verificada' : 'Sesión aún no firmada'}</span>
                       {signature && <strong className='signature-hash'>{signature.hash_firma.slice(0, 24)}…</strong>}
                     </div>
-                    {user.firma && signature && (
+                    {user.firma && (isHistorical || signature) && (
                       <img
                         className={`firma-stamp ${stamped ? 'firma-stamp-settled' : 'firma-stamp-animating'}`}
                         src={user.firma}

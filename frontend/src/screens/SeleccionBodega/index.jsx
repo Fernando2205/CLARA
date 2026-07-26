@@ -1,4 +1,4 @@
-import { ArrowRight, Boxes, Building2, Clock3, Map, MapPin } from 'lucide-react'
+import { ArrowRight, Boxes, Building2, Check, Clock3, Map, MapPin } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionStore } from '../../stores/session'
 import { Avatar, Button, Logo, Progress } from '../../components/ui'
@@ -40,8 +40,10 @@ export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
   const user = useAuthStore((state) => state.user)
 
   const select = (warehouse) => {
+    // Solo selecciona: entrar a contar es una decisión aparte, por el
+    // botón "Comenzar conteo" del pie — así queda tiempo de tocar "Ver
+    // distribución" antes de comprometerse a la toma.
     setBodega(warehouse.id, warehouse.label)
-    onContinue()
   }
 
   return (
@@ -91,7 +93,9 @@ export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
                 {warehouse.open && <Progress current={warehouse.open} total={warehouse.refs} />}
               </span>
               <span className='warehouse-action'>
-                {warehouse.open ? 'Continuar' : 'Empezar'} <ArrowRight size={20} />
+                {selected === warehouse.id
+                  ? <><Check size={20} /> Seleccionada</>
+                  : 'Seleccionar'}
               </span>
             </button>
           ))}
