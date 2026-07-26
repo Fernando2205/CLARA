@@ -101,6 +101,19 @@ def _local_quantity(text: str) -> float | None:
     return None
 
 
+def has_multiple_product_mentions(phrase: str) -> bool:
+    # Señal de que el operario dictó varios productos en una sola frase
+    # ("tengo 2L de aceite, tengo 5kg de..."): el parser (local o GPT) solo
+    # entiende un producto por frase, así que mostramos una pista clara en
+    # vez de un "no encontré" con todas las palabras pegadas.
+    text = normalize_text(phrase)
+    tokens = text.split()
+    quantity_hits = len(re.findall(r"\d+(?:[.,]\d+)?", text))
+    quantity_hits += sum(1 for token in tokens if token in SMALL_NUMBERS or token in TENS)
+    unit_hits = sum(1 for token in tokens if token in UNITS)
+    return quantity_hits >= 2 and unit_hits >= 2
+
+
 def local_extract(phrase: str) -> RawExtraction:
     text = normalize_text(phrase)
     correction = bool(re.search(r"\b(perdon|corrige|eran|me equivoque|quise decir)\b", text))

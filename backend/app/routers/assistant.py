@@ -8,8 +8,9 @@ from ..db import get_db
 from ..models import (
     AssistantRequest, AssistantResponse, ExtractRequest, RawExtraction,
 )
-from ..services.assistant import analyze_phrase, refine_failed_capture
+from ..services.assistant import analyze_phrase
 from ..services.extraction import resolve_extraction
+from ..services.gpt import has_multiple_product_mentions
 from ..services.inventory import get_inventory, get_inventory_item
 from ..services.matcher import match_catalog
 
@@ -52,28 +53,15 @@ async def assistant(
         )
         extraction = resolve_extraction(connection, extract_request, raw, origin)
         if extraction.tipo == "no_match":
-            refined = await refine_failed_capture(request.frase, analysis)
-            if refined and refined.producto_texto != analysis.producto_texto:
-                refined_raw = RawExtraction(
-                    producto_texto=refined.producto_texto,
-                    cantidad=refined.cantidad,
-                    unidad=refined.unidad,
-                    estado_producto=refined.estado_producto,
-                    es_correccion=refined.intencion == "corregir",
+            if has_multiple_product_mentions(request.frase):
+                message = "Varios productos en una frase"
+                spoken_message = "Parece que dijiste varios productos juntos. Dime uno a la vez, por favor."
+            else:
+                message = f"Sin coincidencia · {analysis.producto_texto or 'Producto no identificado'}"
+                spoken_message = (
+                    f"No encontré {analysis.producto_texto or 'ese producto'} en esta bodega. "
+                    "Prueba con un nombre más corto."
                 )
-                refined_extraction = resolve_extraction(
-                    connection, extract_request, refined_raw, "openai"
-                )
-                if refined_extraction.articulo is not None:
-                    analysis = refined
-                    extraction = refined_extraction
-                    origin = "openai"
-        if extraction.tipo == "no_match":
-            message = f"Sin coincidencia · {analysis.producto_texto or 'Producto no identificado'}"
-            spoken_message = (
-                f"No encontré {analysis.producto_texto or 'ese producto'} en esta bodega. "
-                "Prueba con un nombre más corto."
-            )
         elif extraction.requiere_seleccion and extraction.articulo:
             option_count = 1 + len(extraction.alternativas)
             message = f"Elige una variante · {option_count} coincidencias"
@@ -119,6 +107,14 @@ async def assistant(
             spoken_message = (
                 "Me faltan datos. Di la cantidad, la unidad y el producto."
             )
+        if analysis.productos_adicionales > 0:
+            extra = analysis.productos_adicionales
+            aviso = (
+                f"Mencionaste {extra} producto{'s' if extra != 1 else ''} más en la "
+                "misma frase — dímelo por separado cuando confirmes este."
+            )
+            message = f"{message} · +{extra} producto{'s' if extra != 1 else ''} pendiente{'s' if extra != 1 else ''}"
+            spoken_message = f"{spoken_message} {aviso}"
         return AssistantResponse(
             intencion=analysis.intencion,
             mensaje=message,

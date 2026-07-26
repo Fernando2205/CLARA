@@ -125,6 +125,9 @@ export function askClara ({
   lastSku,
   alertContext,
 }) {
+  // El backend siempre llama a GPT para razonar la frase (techo de 4s);
+  // el timeout del cliente queda por encima de eso con margen para no
+  // mostrar "modo local" cuando el backend en realidad sí iba a responder.
   return apiFetch('/assistant', {
     method: 'POST',
     body: JSON.stringify({
@@ -134,7 +137,7 @@ export function askClara ({
       contexto_ultimo_sku: lastSku || null,
       contexto_alerta: alertContext || null,
     }),
-  }, 3500)
+  }, 5500)
 }
 
 export function getInventory ({ warehouse, sessionId, query = '', status = 'todos' }) {

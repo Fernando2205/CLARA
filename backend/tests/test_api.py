@@ -357,19 +357,20 @@ def test_voice_rejects_artificial_preambles():
     )
 
 
-def test_failed_local_match_gets_a_second_structured_interpretation(monkeypatch):
-    async def fake_refinement(_, baseline):
+def test_polite_filler_phrase_is_understood_via_gpt_reasoning(monkeypatch):
+    # analyze_phrase (services.assistant) es ahora la única llamada a GPT:
+    # simula lo que devolvería un razonamiento real sobre una frase con
+    # relleno cortés que el análisis local por sí solo no entendería bien.
+    async def fake_analysis(_phrase):
         return AssistantAnalysis(
             intencion="registrar",
             producto_texto="aceite",
-            cantidad=baseline.cantidad,
-            unidad=baseline.unidad,
-            estado_producto=baseline.estado_producto,
-        )
+            cantidad=6,
+            unidad="litros",
+            estado_producto=None,
+        ), "openai"
 
-    monkeypatch.setattr(
-        assistant_router, "refine_failed_capture", fake_refinement
-    )
+    monkeypatch.setattr(assistant_router, "analyze_phrase", fake_analysis)
     with TestClient(app) as client:
         response = client.post(
             "/assistant",

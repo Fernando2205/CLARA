@@ -129,6 +129,24 @@ function extractUnit (normalized) {
   return null
 }
 
+// Detecta cuando el operario dictó varios productos en una sola frase
+// ("tengo 2L de aceite, tengo 5kg de..."), algo que el parser no separa
+// (solo entiende un producto por frase) — así evitamos mostrarle un
+// "no encontré" con todas las palabras pegadas y sin sentido.
+function countQuantityMentions (normalized) {
+  const digits = normalized.match(/\d+(?:[.,]\d+)?/g) || []
+  const words = normalized.split(' ').filter((token) => smallNumbers[token] != null || tens[token] != null)
+  return digits.length + words.length
+}
+
+function countUnitMentions (normalized) {
+  return normalized.split(' ').filter((token) => unitWords.includes(token)).length
+}
+
+function hasMultipleProductMentions (normalized) {
+  return countQuantityMentions(normalized) >= 2 && countUnitMentions(normalized) >= 2
+}
+
 function extractProductText (normalized) {
   return normalized
     .split(' ')
@@ -377,6 +395,9 @@ export function parseInventoryPhrase (phrase, { warehouse, records = [] } = {}) 
   const match = matchCatalog(productText, warehouse)
 
   if (!productText || match.type === 'no_match') {
+    const message = hasMultipleProductMentions(normalized)
+      ? 'Parece que dijiste varios productos juntos. Dime uno a la vez, por favor.'
+      : `No encontré «${productText || phrase}» en esta bodega.`
     return {
       type: 'no_match',
       phrase,
@@ -384,7 +405,7 @@ export function parseInventoryPhrase (phrase, { warehouse, records = [] } = {}) 
       quantity,
       spokenUnit,
       state,
-      message: `No encontré «${productText || phrase}» en esta bodega.`,
+      message,
       alternatives: match.alternatives,
     }
   }

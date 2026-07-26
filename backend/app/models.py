@@ -164,6 +164,10 @@ class AssistantAnalysis(BaseModel):
     cantidad: float | None
     unidad: UnitSpeech | None
     estado_producto: str | None
+    # Cuántos productos ADICIONALES (más allá de `producto_texto`) mencionó
+    # el usuario en la misma frase, según GPT. 0 en el análisis local
+    # (respaldo sin OPENAI_API_KEY o si GPT falla).
+    productos_adicionales: int = 0
 
 
 class AssistantRequest(ExtractRequest):
