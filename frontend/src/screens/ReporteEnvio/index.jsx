@@ -8,12 +8,9 @@ import {
   FileText,
   Loader2,
   Mail,
-  MessageCircleMore,
-  Send,
   Share2,
   ShieldCheck,
   Trash2,
-  Users,
 } from 'lucide-react'
 import { Button, Logo, Toast, TopBar } from '../../components/ui'
 import { API_URL, deleteReportFiles, getInventory, getSessionSummary, requestReport } from '../../lib/api'
@@ -152,17 +149,17 @@ export default function ReporteEnvio ({
     }
   }
 
-  const send = async (channel, extraEmail) => {
+  const send = async (extraEmail) => {
     if (!sessionId || !stamped) return
-    setSending(channel)
+    setSending('email')
     try {
       const response = await requestReport(sessionId, {
         formatos: ['pdf'],
-        enviar: { telegram: channel === 'telegram', email: channel === 'email' ? extraEmail : null },
+        enviar: { telegram: false, email: extraEmail },
         alcance,
       })
-      const status = response.detalle_envio[channel]
-      setDeliveries((current) => ({ ...current, [channel]: status }))
+      const status = response.detalle_envio.email
+      setDeliveries((current) => ({ ...current, email: status }))
       notify(
         status === 'enviado'
           ? 'Enviado correctamente.'
@@ -364,27 +361,10 @@ export default function ReporteEnvio ({
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder='correo@empresa.com'
               />
-              <button type='button' onClick={() => send('email', email)} disabled={!email || !!sending || !stamped}>
+              <button type='button' onClick={() => send(email)} disabled={!email || !!sending || !stamped}>
                 {sending === 'email' ? 'Enviando…' : 'Enviar'}
               </button>
             </label>
-            <div className='channel-grid channel-grid-3'>
-              <button className='channel telegram' onClick={() => send('telegram')} disabled={!!sending || !stamped}>
-                <span><Send size={24} /></span>{sending === 'telegram' ? 'Enviando…' : 'Telegram'}
-              </button>
-              <button className='channel unavailable' disabled>
-                <span><MessageCircleMore size={24} /></span>WhatsApp<small>Próximamente</small>
-              </button>
-              <button className='channel unavailable' disabled>
-                <span><Users size={24} /></span>Teams<small>Próximamente</small>
-              </button>
-            </div>
-            {deliveries.telegram && (
-              <div className='sent-confirmation'>
-                <CheckCircle2 size={22} />
-                <span><strong>Telegram:</strong> {deliveries.telegram}</span>
-              </div>
-            )}
             {deliveries.email && (
               <div className='sent-confirmation'>
                 <CheckCircle2 size={22} />
