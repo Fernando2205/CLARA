@@ -207,7 +207,7 @@ Frases fuera de dominio (no son inventario) → producto_texto null.
 | **V4** saneamiento | `stock_sistema < 0` | info | "El sistema muestra {stock}. Tu conteo de {cantidad} lo corrige de raíz ✅" |
 | **V5** doble conteo | `existe registro previo de articulo_id en la sesión` | warn | "Ya registraste {articulo} ({prev}). ¿Corrección o segundo estante (suma)?" — acciones: Reemplazar / Sumar / Cancelar |
 | **V6** entero requerido | `articulo.unidad=='Unidad' and cantidad % 1 != 0` | error | "{articulo} se cuenta por unidades enteras." |
-| **V7** factor de empaque | `unidad_dicha in (cajas,bolsas,paquetes)` | warn | "Capturaste por {unidad_dicha}: ¿cuántas unidades trae cada una?" — input numérico multiplica |
+| **V7** factor de empaque | `articulo.unidad=='Unidad' and unidad_dicha in (cajas,bolsas,paquetes)` | warn | "Capturaste por {unidad_dicha}: ¿cuántas unidades trae cada una?" — input numérico multiplica |
 
 Orden de evaluación: V2 → V6 → V3 → V5 → V7 → V1 → V4. `error` bloquea guardar hasta resolver; `warn` exige elegir una acción; `info` no bloquea.
 

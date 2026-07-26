@@ -251,6 +251,35 @@ def test_validate_integer_rule():
         assert "V6" in {alert["regla"] for alert in response.json()["alertas"]}
 
 
+def test_package_factor_rule_ignores_products_controlled_by_kilos():
+    # V7 (factor de empaque) solo tiene sentido cuando el catálogo controla
+    # el articulo por unidades ("cajas de huevos, ¿cuantas trae cada una?").
+    # Para un articulo en kilos como la harina, decir "cajas" ya lo corrige
+    # V2 (unidad incoherente); V7 no debe disparar tambien, o contradice a V2
+    # preguntando algo que no aplica ("cuantas unidades trae cada caja").
+    with TestClient(app) as client:
+        extracted = client.post(
+            "/extract",
+            json={"frase": "nueve kilos de harina de trigo", "bodega": WAREHOUSE},
+        ).json()
+        assert extracted["articulo"]
+        assert extracted["articulo"]["unidad"] == "Kilogram"
+
+        response = client.post(
+            "/validate",
+            json={
+                "articulo_id": extracted["articulo"]["id"],
+                "cantidad": 9,
+                "unidad_dicha": "cajas",
+                "confianza_match": 1,
+            },
+        )
+        assert response.status_code == 200
+        reglas = {alert["regla"] for alert in response.json()["alertas"]}
+        assert "V2" in reglas
+        assert "V7" not in reglas
+
+
 def test_conversational_queries_and_complete_inventory():
     with TestClient(app) as client:
         created = client.post(

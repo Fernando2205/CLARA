@@ -96,7 +96,7 @@ def evaluate_rules(
             ],
         ))
 
-    if spoken_unit in {"cajas", "bolsas", "paquetes"}:
+    if article["unidad"] == "Unidad" and spoken_unit in {"cajas", "bolsas", "paquetes"}:
         alerts.append(AlertOut(
             regla="V7", nivel="warn",
             mensaje=f"Capturaste por {spoken_unit}: ¿cuántas unidades trae cada una?",

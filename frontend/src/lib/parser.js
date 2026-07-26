@@ -241,7 +241,7 @@ export function validateInventoryRecord (record, records = []) {
     })
   }
 
-  if (['cajas', 'bolsas', 'paquetes'].includes(record.spokenUnit)) {
+  if (record.catalogUnit === 'Unidad' && ['cajas', 'bolsas', 'paquetes'].includes(record.spokenUnit)) {
     alerts.push({
       rule: 'V7',
       level: 'warn',
