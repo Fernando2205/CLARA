@@ -1,4 +1,7 @@
-import catalog from '../../../docs/catalogo_piscilago.json'
+// Copia local del catálogo (no en docs/): en despliegues con Root Directory
+// (ej. Vercel con Include Source Files desactivado), nada fuera de esta
+// carpeta llega al build.
+import catalog from './catalogo_piscilago.json'
 
 const unitLabels = {
   Unidad: 'unidades',

@@ -6,8 +6,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
-BACKEND_DIR = Path(__file__).resolve().parents[1]
-REPO_DIR = BACKEND_DIR.parent
+SEED_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = SEED_DIR.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
@@ -26,7 +26,10 @@ def password_hash(value: str) -> str:
 
 def seed_if_empty() -> dict[str, int]:
     init_db()
-    catalog_path = REPO_DIR / "docs" / "catalogo_piscilago.json"
+    # El catálogo vive junto al seed (no en docs/) para que backend/ sea
+    # autocontenido: en despliegues como Railway, donde el Root Directory
+    # del servicio es backend/, nada fuera de esa carpeta llega al build.
+    catalog_path = SEED_DIR / "catalogo_piscilago.json"
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
 
     with connect() as connection:
