@@ -1,5 +1,6 @@
 import logging
 import mimetypes
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,7 +13,12 @@ from .config import get_settings
 from .db import connect
 from .routers import assistant, auth, extract, inventory, report, sessions, speech, transcribe, validate
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+# stream=sys.stdout es importante: logging.basicConfig manda a stderr por
+# defecto, y plataformas como Railway clasifican TODO lo que llega por
+# stderr como "error" sin mirar el nivel real del mensaje — así, logs
+# normales en INFO (httpx, weasyprint, nuestro propio logger) aparecían
+# marcados como errores en el dashboard aunque la operación fuera exitosa.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s", stream=sys.stdout)
 
 # StaticFiles adivina el content-type con mimetypes.guess_type(), que en
 # Windows lee del registro del sistema y devuelve application/vnd.ms-excel
