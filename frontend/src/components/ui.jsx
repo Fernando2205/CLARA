@@ -11,6 +11,7 @@ import {
   Lightbulb,
   Mic,
   RotateCcw,
+  UserRound,
   Wifi,
 } from 'lucide-react'
 import { CATEGORY_ICON_PATHS } from '../lib/categories'
@@ -53,8 +54,14 @@ export function Logo ({ light = false }) {
   )
 }
 
-export function Avatar ({ initials = 'SV', size = 'md' }) {
-  return <span className={`avatar avatar-${size}`} aria-label='Sofía Valencia'>{initials}</span>
+const AVATAR_ICON_SIZES = { xs: 14, sm: 18, md: 24, lg: 36, xl: 56 }
+
+export function Avatar ({ size = 'md' }) {
+  return (
+    <span className={`avatar avatar-${size}`} aria-label='Perfil de usuario'>
+      <UserRound size={AVATAR_ICON_SIZES[size] || AVATAR_ICON_SIZES.md} />
+    </span>
+  )
 }
 
 export function Button ({ children, variant = 'primary', icon: Icon, className = '', ...props }) {
