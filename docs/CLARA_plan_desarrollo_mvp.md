@@ -64,7 +64,8 @@ clara/
 CREATE TABLE usuarios (
   id INTEGER PRIMARY KEY, nombre TEXT, cargo TEXT, bodega_asignada TEXT,
   turno TEXT, pin TEXT,               -- pin en claro está OK para el MVP demo
-  password_hash TEXT                  -- sha256, para la firma
+  password_hash TEXT,                 -- sha256, para la firma
+  cedula TEXT, correo TEXT            -- añadidas para el alta de usuario real (screens/Registro/, ver §7.6)
 );
 CREATE TABLE articulos (
   id INTEGER PRIMARY KEY, sku TEXT NULL, articulo TEXT NOT NULL,
@@ -191,6 +192,8 @@ Frases fuera de dominio (no son inventario) → producto_texto null.
 3. Buscar primero en la bodega de la sesión; si score máximo < 2, buscar global (marcar `otra_bodega=true` → alerta).
 4. `confianza_match = min(1.0, score / (3 × n_tokens_query))`. Umbrales: `≥0.85` alta · `0.6–0.84` media (mostrar alternativas) · `0.35–0.59` baja (exigir confirmación) · `<0.35` → `no_match`.
 5. Devolver top-4 (1 principal + 3 alternativas).
+
+**Nota de implementación (calibración real, difiere del punto 4 anterior):** la implementación real en `services/matcher.py` usa pesos de scoring ligeramente distintos (prefijo=2.2, substring=1.8, bonus frase completa=2.5 solo si `query_norm == name_norm`) y una regla adicional no contemplada arriba: `lexical_coverage(query, nombre)` — la fracción de tokens de la consulta que encuentran algún match parcial en el nombre del artículo. Un artículo solo se considera "soportado" (`is_supported`) si `confidence >= 0.45 Y lexical_coverage >= 0.6`, en vez de los umbrales 0.85/0.6/0.35 de arriba. Esta doble condición evita falsos positivos de una sola palabra suelta con score alto pero baja cobertura real de la frase dicha.
 
 ---
 
