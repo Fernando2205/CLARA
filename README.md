@@ -42,6 +42,8 @@ Ninguno de estos es un error de conteo: son errores de _transcripción_ acumulad
 
 Recomendamos entrar desde un **dispositivo móvil** — idealmente una tablet, aunque un teléfono también funciona bien —, ya que CLARA está diseñada tablet-first y el micrófono se usa igual que en una operación real de bodega. Al ser una PWA, el navegador va a ofrecer la opción de **instalarla como aplicación** en el dispositivo (en Chrome/Android suele aparecer como "Agregar a pantalla de inicio" o un ícono de instalación en la barra de direcciones); vale la pena probarla instalada, así es como se usaría en una cocina real.
 
+Si entras desde el celular y no escuchas la voz de CLARA, sube el **volumen de notificaciones** (no solo el de medios) — en varios Android el audio de la app suena por ese canal.
+
 Cuenta de prueba, disponible siempre que el servidor arranque con una base de datos nueva:
 
 | Campo           | Valor           |
