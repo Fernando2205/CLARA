@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +10,8 @@ from seed.seed import seed_if_empty
 from .config import get_settings
 from .db import connect
 from .routers import assistant, auth, extract, inventory, report, sessions, speech, transcribe, validate
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
 settings = get_settings()
 settings.generated_dir.mkdir(parents=True, exist_ok=True)

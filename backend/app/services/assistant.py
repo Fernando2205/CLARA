@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from typing import Literal
 
@@ -10,6 +11,8 @@ from ..config import get_settings
 from ..models import AssistantAnalysis
 from .gpt import local_extract
 from .matcher import lexical_coverage, normalize_text
+
+logger = logging.getLogger(__name__)
 
 
 ASSISTANT_PROMPT = """Eres el clasificador conversacional de CLARA, asistente de inventarios.
@@ -109,10 +112,12 @@ async def analyze_phrase(
 ) -> tuple[AssistantAnalysis, Literal["openai", "local"]]:
     local = local_assistant_analysis(phrase)
     if local.intencion != "desconocido":
+        logger.info("analyze_phrase: clasificador local resolvio la intencion (%s), no se llamo a GPT", local.intencion)
         return local, "local"
 
     settings = get_settings()
     if not settings.openai_api_key:
+        logger.info("analyze_phrase: OPENAI_API_KEY no configurada, se usa el clasificador local")
         return local, "local"
 
     client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=2.2, max_retries=0)
@@ -120,6 +125,7 @@ async def analyze_phrase(
         response = await asyncio.wait_for(
             client.responses.parse(
                 model=settings.openai_model,
+                temperature=0,
                 input=[
                     {"role": "system", "content": ASSISTANT_PROMPT},
                     {"role": "user", "content": phrase},
@@ -151,7 +157,11 @@ async def analyze_phrase(
             unidad=parsed.unidad or local.unidad,
             estado_producto=parsed.estado_producto or local.estado_producto,
         ), "openai"
-    except Exception:
+    except Exception as error:
+        logger.warning(
+            "analyze_phrase: GPT fallo (%s: %s), se usa el clasificador local",
+            type(error).__name__, error,
+        )
         return local_assistant_analysis(phrase), "local"
 
 
@@ -168,6 +178,7 @@ async def refine_failed_capture(
         response = await asyncio.wait_for(
             client.responses.parse(
                 model=settings.openai_model,
+                temperature=0,
                 input=[
                     {"role": "system", "content": REFINEMENT_PROMPT},
                     {"role": "user", "content": phrase},
@@ -196,5 +207,9 @@ async def refine_failed_capture(
             unidad=baseline.unidad or parsed.unidad,
             estado_producto=baseline.estado_producto or parsed.estado_producto,
         )
-    except Exception:
+    except Exception as error:
+        logger.warning(
+            "refine_failed_capture: GPT fallo (%s: %s), se mantiene el resultado sin refinar",
+            type(error).__name__, error,
+        )
         return None

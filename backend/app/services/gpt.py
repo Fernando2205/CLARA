@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from typing import Literal
 
@@ -9,6 +10,8 @@ from openai import AsyncOpenAI
 from ..config import get_settings
 from ..models import RawExtraction
 from .matcher import lexical_coverage, normalize_text
+
+logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = """Eres el motor de extracción de CLARA, asistente de inventarios de cocinas de Colsubsidio (Colombia).
@@ -139,10 +142,12 @@ async def extract_entities(phrase: str) -> tuple[RawExtraction, Literal["openai"
             and local.unidad is not None
         )
     ):
+        logger.info("extract_entities: parser local resolvio la frase, no se llamo a GPT")
         return local, "local"
 
     settings = get_settings()
     if not settings.openai_api_key:
+        logger.info("extract_entities: OPENAI_API_KEY no configurada, se usa el parser local")
         return local, "local"
 
     client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=2.15, max_retries=0)
@@ -150,6 +155,7 @@ async def extract_entities(phrase: str) -> tuple[RawExtraction, Literal["openai"
         response = await asyncio.wait_for(
             client.responses.parse(
                 model=settings.openai_model,
+                temperature=0,
                 input=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": phrase},
@@ -177,6 +183,10 @@ async def extract_entities(phrase: str) -> tuple[RawExtraction, Literal["openai"
             estado_producto=parsed.estado_producto or local.estado_producto,
             es_correccion=parsed.es_correccion or local.es_correccion,
         ), "openai"
-    except Exception:
+    except Exception as error:
         # El demo nunca se interrumpe por red, cuota o una respuesta inválida.
+        logger.warning(
+            "extract_entities: GPT fallo (%s: %s), se usa el parser local",
+            type(error).__name__, error,
+        )
         return local_extract(phrase), "local"
