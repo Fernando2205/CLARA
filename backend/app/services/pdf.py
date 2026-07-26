@@ -58,7 +58,9 @@ def report_data(
 
     contados = connection.execute(
         """
-        SELECT r.*, a.sku, a.articulo, a.stock_sistema, a.bodega
+        SELECT r.*, a.sku, a.articulo,
+               COALESCE(r.stock_sistema_antes, a.stock_sistema) AS stock_sistema,
+               a.bodega
         FROM registros r JOIN articulos a ON a.id = r.articulo_id
         WHERE r.sesion_id = ? ORDER BY a.articulo
         """,

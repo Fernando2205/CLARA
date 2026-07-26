@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 const resetDevelopmentServiceWorker = {
   name: 'clara-reset-development-service-worker',
   apply: 'serve',
-  configureServer(server) {
+  configureServer (server) {
     server.middlewares.use((request, response, next) => {
       if (request.url?.split('?')[0] !== '/sw.js') {
         next()

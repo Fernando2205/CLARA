@@ -1,7 +1,9 @@
 import {
   AlertTriangle,
   Check,
+  CheckCheck,
   CheckCircle2,
+  CircleX,
   CloudOff,
   CircleHelp,
   Delete,
@@ -132,6 +134,8 @@ export function Badge ({ type }) {
     sincronizado: [CheckCircle2, 'Sincronizado'],
     pendiente: [CloudOff, 'Pendiente'],
     corregido: [RotateCcw, 'Corregido'],
+    aplicado: [CheckCheck, 'Aplicado al maestro'],
+    rechazado: [CircleX, 'No guardado'],
     alerta: [AlertTriangle, 'Alerta'],
   }[type] || [Check, type]
   const [Icon, label] = content

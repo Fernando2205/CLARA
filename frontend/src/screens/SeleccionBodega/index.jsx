@@ -102,7 +102,7 @@ export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
             <span>La sesión se guarda automáticamente en este dispositivo.</span>
           </div>
           <div className='warehouse-footer-actions'>
-            <Button variant='secondary' onClick={onMap} icon={Map}>Ver mapa en vivo</Button>
+            <Button variant='secondary' onClick={onMap} icon={Map}>Ver distribución</Button>
             <Button onClick={onContinue} icon={ArrowRight}>Comenzar conteo</Button>
           </div>
         </div>

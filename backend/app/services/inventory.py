@@ -15,6 +15,7 @@ def inventory_rows(
         SELECT
             a.*,
             r.cantidad_fisica AS conteo_fisico,
+            COALESCE(r.corregido, 0) AS corregido,
             CASE WHEN r.id IS NULL THEN 0 ELSE 1 END AS contado_en_sesion
         FROM articulos a
         LEFT JOIN registros r ON r.id = (
@@ -39,9 +40,12 @@ def row_to_inventory_item(row: sqlite3.Row) -> InventoryItem:
         unidad=row["unidad"],
         bodega=row["bodega"],
         stock_sistema=row["stock_sistema"],
+        hist_min=row["hist_min"],
+        hist_max=row["hist_max"],
         cantidad_actual=current,
         fuente="conteo_fisico" if counted else "sistema",
         contado_en_sesion=counted,
+        corregido=bool(row["corregido"]),
     )
 
 
@@ -81,6 +85,7 @@ def get_inventory_item(
         SELECT
             a.*,
             r.cantidad_fisica AS conteo_fisico,
+            COALESCE(r.corregido, 0) AS corregido,
             CASE WHEN r.id IS NULL THEN 0 ELSE 1 END AS contado_en_sesion
         FROM articulos a
         LEFT JOIN registros r ON r.id = (

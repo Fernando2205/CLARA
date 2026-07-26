@@ -104,6 +104,7 @@ class SessionHistoryItem(BaseModel):
     contadas: int
     tiempo_min: float
     corregidos: int
+    inventario_aplicado: bool = False
 
 
 class RecordCreate(BaseModel):
@@ -113,6 +114,7 @@ class RecordCreate(BaseModel):
     estado_producto: str | None = None
     confianza: float = 1
     alertas: list[dict] = []
+    corregido: bool = False
 
 
 class RecordUpdate(BaseModel):
@@ -175,9 +177,12 @@ class InventoryItem(BaseModel):
     unidad: str
     bodega: str
     stock_sistema: float
+    hist_min: float | None = None
+    hist_max: float | None = None
     cantidad_actual: float
     fuente: Literal["sistema", "conteo_fisico"]
     contado_en_sesion: bool = False
+    corregido: bool = False
 
 
 class InventorySummary(BaseModel):
