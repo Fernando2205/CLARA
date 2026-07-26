@@ -97,7 +97,7 @@ export default function SessionPanel ({
                 : (
                   <>
                     <strong>{formatNumber(item.stock_sistema)}</strong>
-                    <span>sistema</span>
+                    <span>{unitLabels[item.unidad] || item.unidad} · sistema</span>
                   </>
                   )}
             </div>
