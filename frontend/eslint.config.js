@@ -34,6 +34,7 @@ export default [
         Image: 'readonly',
         caches: 'readonly',
         ResizeObserver: 'readonly',
+        SpeechSynthesisUtterance: 'readonly',
       },
     },
     plugins: {

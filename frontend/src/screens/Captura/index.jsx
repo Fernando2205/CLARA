@@ -294,7 +294,7 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
         if (speechSequence.current === sequence) {
           setActiveCaption('')
           setVoiceState('idle')
-          showToast('La voz natural no está disponible. Revisa la conexión con el backend.')
+          showToast('Este dispositivo no puede reproducir voz. Lee la respuesta en la conversación.')
         }
       },
     })

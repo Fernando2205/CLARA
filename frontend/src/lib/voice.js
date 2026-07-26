@@ -114,6 +114,36 @@ export function stopSpeaking () {
   activeMediaSource = null
 }
 
+// Respaldo cuando ElevenLabs no responde (backend caído, cuota agotada,
+// voz sin permiso en el plan, etc.): usa la síntesis de voz nativa del
+// navegador para que Clara nunca se quede muda. `stopSpeaking()` ya cancela
+// `speechSynthesis`, así que una interrupción intencional (nueva frase) no
+// debe mostrarse como error.
+function speakWithNativeSynthesis (text, callbacks) {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+      callbacks.onError?.()
+      resolve('unavailable')
+      return
+    }
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'es-CO'
+    utterance.onstart = () => callbacks.onStart?.('native')
+    utterance.onend = () => {
+      callbacks.onEnd?.('native')
+      resolve('native')
+    }
+    utterance.onerror = (event) => {
+      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+        callbacks.onError?.()
+      }
+      resolve('unavailable')
+    }
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+  })
+}
+
 export async function speakNatural (text, callbacks = {}) {
   stopSpeaking()
   const controller = new AbortController()
@@ -198,7 +228,6 @@ export async function speakNatural (text, callbacks = {}) {
     return 'elevenlabs'
   } catch {
     if (controller.signal.aborted) return 'stopped'
-    callbacks.onError?.()
-    return 'unavailable'
+    return speakWithNativeSynthesis(text, callbacks)
   }
 }
