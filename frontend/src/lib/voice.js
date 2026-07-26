@@ -1,11 +1,10 @@
-import { getSpeechResponse, transcribeAudio } from './api.js'
+import { getSpeechResponse } from './api.js'
 
 let activeAudio = null
 let activeObjectUrl = null
 let activeSpeechController = null
 let activeMediaSource = null
 
-const LOW_CONFIDENCE_THRESHOLD = 0.8
 const PREFERRED_SPANISH_VOICES = [
   'Mónica',
   'Monica',
@@ -16,48 +15,19 @@ const PREFERRED_SPANISH_VOICES = [
   'Microsoft Elvira',
 ]
 
-function startBackupRecorder () {
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return null
-
-  const state = { chunks: [], stream: null, recorder: null, ready: null }
-  state.ready = navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-    state.stream = stream
-    const recorder = new MediaRecorder(stream)
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) state.chunks.push(event.data)
-    }
-    recorder.start()
-    state.recorder = recorder
-    return recorder
-  }).catch(() => null)
-
-  return {
-    async stopAndGetBlob () {
-      await state.ready
-      const recorder = state.recorder
-      state.stream?.getTracks().forEach((track) => track.stop())
-      if (!recorder || recorder.state === 'inactive') return null
-      return new Promise((resolve) => {
-        recorder.onstop = () => resolve(new Blob(state.chunks, { type: recorder.mimeType || 'audio/webm' }))
-        recorder.stop()
-      })
-    },
-    discard () {
-      state.ready.then(() => {
-        state.stream?.getTracks().forEach((track) => track.stop())
-      })
-    },
-  }
-}
-
-export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError, onEnd }) {
+// Nota: hubo un intento de reforzar la transcripción de baja confianza con
+// Whisper en segundo plano (grabar con MediaRecorder + /transcribe) y
+// ofrecer el resultado vía `onRefine`. Se quitó: al reprocesar la frase
+// automáticamente duplicaba la respuesta hablada de Clara, sin una forma
+// confiable de saber si la primera pasada ya había hablado. Si el
+// reconocimiento nativo falla, el usuario simplemente repite la frase.
+export function listenOnce ({ onStart, onInterim, onFinal, onError, onEnd }) {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!Recognition) {
     onError?.('Tu navegador no ofrece dictado. Puedes escribir el conteo.')
     return { supported: false, stop: () => {} }
   }
 
-  const backup = startBackupRecorder()
   let hadFinalResult = false
   let stoppedByUser = false
 
@@ -75,28 +45,8 @@ export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError, on
     }
     hadFinalResult = true
     onFinal?.(text)
-    const confidence = result[0].confidence
-    if (!backup) return
-    if (confidence >= LOW_CONFIDENCE_THRESHOLD) {
-      backup.discard()
-      return
-    }
-    // Confianza baja del reconocimiento nativo: reintentamos en segundo
-    // plano con Whisper y, si trae texto distinto, lo ofrecemos como ajuste.
-    backup.stopAndGetBlob().then((blob) => {
-      if (!blob || blob.size === 0) return null
-      return transcribeAudio(blob)
-    }).then((result) => {
-      const refined = result?.texto?.trim()
-      if (refined && refined.toLowerCase() !== text.trim().toLowerCase()) {
-        onRefine?.(refined)
-      }
-    }).catch(() => {
-      // Sin conexión o backend caído: nos quedamos con la transcripción local.
-    })
   }
   recognition.onerror = (event) => {
-    backup?.discard()
     const message = event.error === 'no-speech'
       ? 'No escuché ninguna instrucción.'
       : 'No pude escuchar con claridad. Inténtalo otra vez o escribe el conteo.'
@@ -112,7 +62,6 @@ export function listenOnce ({ onStart, onInterim, onFinal, onRefine, onError, on
     supported: true,
     stop: () => {
       stoppedByUser = true
-      backup?.discard()
       try {
         recognition.stop()
       } catch {

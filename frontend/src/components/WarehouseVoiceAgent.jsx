@@ -205,6 +205,10 @@ export default function WarehouseVoiceAgent ({
   }, [])
 
   const speakMessage = useCallback(async (visible, spoken = visible) => {
+    // Si el micrófono seguía activo, lo cerramos antes de hablar para que
+    // no se escuche a sí misma y confunda su propia respuesta con una
+    // instrucción nueva.
+    listener.current?.stop()
     appendMessage('assistant', visible)
     if (!voiceEnabled || !spoken) {
       setVoiceState('idle')
@@ -535,7 +539,6 @@ export default function WarehouseVoiceAgent ({
         setInterim('')
         processPhrase(text)
       },
-      onRefine: (text) => processPhrase(text),
       onError: (message, code) => {
         setVoiceState('idle')
         if (code !== 'no-speech') {
@@ -565,7 +568,12 @@ export default function WarehouseVoiceAgent ({
 
   useEffect(() => {
     if (!continuousListening || !open || voiceState !== 'idle') return undefined
-    const timer = window.setTimeout(startListening, 450)
+    // Este mismo reinicio ocurre tanto tras una pausa breve al hablar
+    // (el navegador corta el reconocimiento con continuous=false) como
+    // justo después de que Clara termina de responder — por eso el
+    // margen es un punto medio: rápido para no perder palabras, pero no
+    // tanto como para captar el eco de su propia voz sin audífonos.
+    const timer = window.setTimeout(startListening, 300)
     return () => window.clearTimeout(timer)
   }, [continuousListening, open, startListening, voiceState])
 

@@ -245,7 +245,6 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
       onStart: () => setVoiceState('listening'),
       onInterim: setInterim,
       onFinal: processPhrase,
-      onRefine: handleRefine,
       onError: (message) => {
         setVoiceState('idle')
         showToast(message)
@@ -257,11 +256,22 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
   }, [])
 
   useEffect(() => {
+    // Con una tarjeta pendiente (elegir producto, confirmar cantidad, etc.)
+    // no reabrimos el mic solos: el reconocimiento de voz se traba con
+    // frases cortas como "confirmar" y se queda "escuchando" sin resolver
+    // nada. El usuario decide por toque (o abre el mic a mano si igual
+    // quiere intentar por voz) — los botones Confirmar/Cancelar/opciones
+    // siempre están visibles.
+    if (pending) return undefined
     if (!autoListen || voiceState !== 'idle') return undefined
-    const timer = window.setTimeout(() => startListening(), 550)
+    // Margen tras terminar de hablar antes de reabrir el micrófono: sin
+    // audífonos, el eco de la voz de Clara en el cuarto puede quedar
+    // sonando un momento y el reconocimiento lo capta como si fuera el
+    // usuario hablando.
+    const timer = window.setTimeout(() => startListening(), 900)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoListen, voiceState])
+  }, [autoListen, voiceState, pending?.type])
 
   const showToast = useCallback((message) => {
     setToast(message)
@@ -285,6 +295,10 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
 
   const speakResponse = useCallback(async (text) => {
     if (!voiceEnabled || !text) return
+    // Si el micrófono seguía activo por cualquier motivo, lo cerramos antes
+    // de que Clara hable: evita que se escuche a sí misma y confunda una
+    // respuesta hablada con una instrucción del usuario.
+    listener.current?.stop()
     const sequence = speechSequence.current + 1
     speechSequence.current = sequence
     setLastSpoken(text)
@@ -325,11 +339,6 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
     spokenCardSignature.current = signature
     speakResponse(text)
   }, [pending, resolvedAlerts, speakResponse, voiceEnabled])
-
-  const handleRefine = (refinedText) => {
-    showToast('Ajusté lo que escuché con una transcripción más precisa.')
-    processPhrase(refinedText)
-  }
 
   const clearPending = () => {
     setPending(null)
@@ -460,7 +469,6 @@ export default function Captura ({ onClose, onReport, onProfile, onBack, autoSta
       onStart: () => setVoiceState('listening'),
       onInterim: setInterim,
       onFinal: processPhrase,
-      onRefine: handleRefine,
       onError: (message) => {
         setVoiceState('idle')
         showToast(message)
