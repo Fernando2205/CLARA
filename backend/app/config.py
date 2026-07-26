@@ -17,7 +17,14 @@ class Settings:
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY", "").strip()
         self.elevenlabs_voice_id = os.getenv("ELEVENLABS_VOICE_ID", "").strip()
         self.elevenlabs_model = os.getenv("ELEVENLABS_MODEL", "eleven_multilingual_v2")
-        self.frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+        # FRONTEND_ORIGIN admite varios orígenes separados por coma (útil en
+        # despliegue: la URL de Vercel y el dominio propio pueden convivir
+        # mientras el DNS del dominio propaga).
+        self.frontend_origins = [
+            origin.strip()
+            for origin in os.getenv("FRONTEND_ORIGIN", "http://localhost:5173").split(",")
+            if origin.strip()
+        ]
         self.database_path = self._path("DATABASE_PATH", "clara.db")
         self.generated_dir = self._path("GENERATED_DIR", "generated")
         self.firma_dir = self._path("FIRMA_DIR", "firmas")
