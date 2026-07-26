@@ -1,4 +1,4 @@
-import { ArrowRight, Boxes, Building2, Check, Clock3, Map, MapPin } from 'lucide-react'
+import { ArrowRight, Building2, Check, Clock3, Map, MapPin } from 'lucide-react'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionStore } from '../../stores/session'
 import { Avatar, Button, Logo, Progress } from '../../components/ui'
@@ -33,8 +33,6 @@ const warehouses = [
 ]
 
 export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
-  const mode = useSessionStore((state) => state.mode)
-  const setMode = useSessionStore((state) => state.setMode)
   const setBodega = useSessionStore((state) => state.setBodega)
   const selected = useSessionStore((state) => state.bodega)
   const user = useAuthStore((state) => state.user)
@@ -63,14 +61,6 @@ export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
           <span className='eyebrow'><MapPin size={15} /> Nueva sesión</span>
           <h1>¿Dónde vas a contar?</h1>
           <p>Selecciona el punto de inventario. Clara recordará esta sesión si necesitas retomarla.</p>
-        </div>
-        <div className='mode-switch' aria-label='Modo de sesión'>
-          <button className={mode === 'toma' ? 'active' : ''} onClick={() => setMode('toma')}>
-            <Boxes size={18} /> Toma física
-          </button>
-          <button className={mode === 'requisicion' ? 'active' : ''} onClick={() => setMode('requisicion')}>
-            <Building2 size={18} /> Requisición
-          </button>
         </div>
         <div className='warehouse-list'>
           {warehouses.map((warehouse) => (
@@ -102,7 +92,7 @@ export default function SeleccionBodega ({ onContinue, onMap, onProfile }) {
         </div>
         <div className='warehouse-footer'>
           <div>
-            <strong>{mode === 'toma' ? 'Toma física' : 'Requisición'} · {warehouses.find((item) => item.id === selected)?.label}</strong>
+            <strong>Toma física · {warehouses.find((item) => item.id === selected)?.label}</strong>
             <span>La sesión se guarda automáticamente en este dispositivo.</span>
           </div>
           <div className='warehouse-footer-actions'>

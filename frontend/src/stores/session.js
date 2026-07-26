@@ -77,7 +77,6 @@ export const useSessionStore = create(persist((set, get) => ({
     corrections: state.bodega === bodega ? state.corrections : 0,
     alertsResolved: state.bodega === bodega ? state.alertsResolved : 0,
   })),
-  setMode: (mode) => set({ mode }),
   setOnline: (online) => {
     set({ online })
     if (online) get().flushPendientesSync()

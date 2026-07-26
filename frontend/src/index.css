@@ -694,30 +694,6 @@ p { font-size: 15px; line-height: 1.55; }
 .warehouse-shell { width: min(1000px, calc(100% - 48px)); margin: 0 auto; padding: 34px 0; }
 .warehouse-title h1 { margin: 6px 0 8px; color: var(--cs-azul-dk); }
 .warehouse-title p { max-width: 640px; color: rgba(51,51,51,.62); }
-.mode-switch {
-  width: min(460px, 100%);
-  margin: 26px 0 18px;
-  padding: 4px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--cs-borde);
-  border-radius: 14px;
-  background: white;
-}
-.mode-switch button {
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 0;
-  border-radius: 10px;
-  color: rgba(51,51,51,.65);
-  background: transparent;
-  font-weight: 600;
-  cursor: pointer;
-}
-.mode-switch button.active { color: white; background: var(--cs-azul); }
 .warehouse-list { display: grid; gap: 12px; }
 .warehouse-card {
   width: 100%;
