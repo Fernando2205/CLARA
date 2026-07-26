@@ -1,15 +1,29 @@
+# Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 frontend/.env
 
+# Backend
 backend/.env
 backend/.venv/
 backend/clara.db
 backend/generated/
 backend/voice_cache/
+backend/firmas/
 backend/**/__pycache__/
 backend/.pytest_cache/
+__pycache__/
+*.pyc
 
+# Editores / IDE
+.claude/settings.local.json
+.vscode/
+.idea/
+
+# Sistema operativo
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
