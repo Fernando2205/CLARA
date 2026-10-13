@@ -12,6 +12,8 @@ CLARA es un asistente de voz para la toma física de inventarios en las cocinas 
 
 Proyecto del **Reto 4 · "Captura inteligente en operaciones de cocina"**, Hackathon Colsubsidio × 30X (22–26 de julio de 2026).
 
+**Video de presentación:** [Ver Video](https://www.youtube.com/watch?v=sfBjd9gceFA)
+
 ## Contenido
 
 - [El problema](#el-problema)
